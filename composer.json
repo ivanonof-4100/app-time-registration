@@ -1,0 +1,15 @@
+{
+    "autoload": {
+        "classmap": [
+            "modules/timesheets/classes/controller",
+            "modules/timesheets/classes/model",
+            "modules/timesheets/classes/renderes",
+            "my_codebase/common/classes",
+            "my_codebase/common/classes/controller",
+            "my_codebase/common/classes/db",
+            "my_codebase/common/classes/model",
+            "my_codebase/common/classes/renderes",
+            "my_codebase/common/library/smarty"
+        ]
+    }
+}
