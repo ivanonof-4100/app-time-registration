@@ -111,12 +111,8 @@ class CustomDateTime
     */
    public static function getDateTimeInstance_fromFormatedDate(string $p_formatedDate ='') : DateTime {
       $dateTimeInstance = DateTime::createFromFormat('!Y-m-d', $p_formatedDate); // Notice the ! to prevent formated-time
-      echo '<pre>'. __METHOD__.': dateTimeInstance =';
-      var_dump($dateTimeInstance);
-      echo '</pre>';
-
       if (!$dateTimeInstance instanceof DateTime) {
-        throw new UnexpectedValueException("Could not parse the date: ".$p_formatedDate);
+        throw new UnexpectedValueException(sprintf("Could not parse the date: '%s'", $p_formatedDate));
       } else {
         return $dateTimeInstance;
       }
