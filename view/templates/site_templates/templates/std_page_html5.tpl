@@ -4,7 +4,7 @@
 {assign var=sidebarContent value=$sidebarContent|default:""}
 
 <!DOCTYPE html>
-<html lang="{$pageLangIdent}">
+<html dir="ltr" lang="{$pageLangIdent}">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
