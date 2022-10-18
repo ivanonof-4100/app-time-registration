@@ -86,14 +86,7 @@ class TimesheetController extends StdController {
                   // Lookup if the employee has a timesheet for that given workday, if not its new else its changed.
                   $timesheet = Timesheet::getInstance_byObjUuid($dbAbstractionInstance, $arrInputParam_timesheetUUID['value']);
                 } else {
-                  $timesheet = Timesheet::getInstance();
-                  if ($arrInputParam_employeeUUID['is_set'] && $arrInputParam_employeeUUID['is_valid']) {
-                    $timesheet->setAttr_employee_uuid($arrInputParam_employeeUUID['value']);
-                  }
-                }
-
-                if ($arrInputParam_workDate['is_set'] && $arrInputParam_workDate['is_valid']) {
-                  $timesheet->setAttr_timesheet_work_date($arrInputParam_workDate['value']);
+                  $timesheet = Timesheet::getInstance('', $arrInputParam_employeeUUID['value'], $arrInputParam_workDate['value']);
                 }
 
                 if ($arrInputParam_hoursRegular['is_set'] && $arrInputParam_hoursRegular['is_valid']) {
