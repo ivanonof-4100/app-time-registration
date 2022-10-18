@@ -32,11 +32,11 @@ SQL-file to import:
 app-time-registration/modules/timesheets/classes/model/sql/np_timesheets.sql
 
 # Install Composer
-# This project relys on PHP-autoloading done by Composer, so you need composer installed.
-# If you dont know how go to the URL and read all about it: https://getcomposer.org/
-# Or if you are on a Linux-box you can run the bash-script that installs Composer 
-# in the sub-directory bash-scripts of the app-directory:
-# app-time-registration/bash-scripts/upgrade-composer.sh
+This project relys on PHP-autoloading done by Composer, so you need composer installed.
+If you dont know how go to the URL and read all about it: https://getcomposer.org/
+Or if you are on a Linux-box you can run the bash-script that installs Composer 
+in the sub-directory bash-scripts of the app-directory:
+app-time-registration/bash-scripts/upgrade-composer.sh
 
 # When your class is not found using auto-loading then generate a new autoload-map:
 $ composer dump-autoload
@@ -50,40 +50,32 @@ Generated autoload files
 # Have fun evaluating my web-application!
 # Access the URL with your favorit web-browser.
 
----
-
 # Project Description:
-## Mini-projekt
-# ------------
-### Kontekst:
-# 
-# Vi skal i fremtiden håndtere Timesedler automatisk.
-# Projektopgaven er at lave en timeseddelsløsning som gør det nemt for medarbejdere,
-# at rapportere arbejdsdage / timer.
-# 
-# I dag modtager vi timesedler for månedslønnede, 14 dages lønnede eller ugelønnede.
-# Disse kommer fra mange forskellige timesystemer eller er blevet lavet manuelt af konsulenten selv
-# og leveret igennem Excel skabeloner konverteret til PDF.
-# 
-# I nogle tilfælde modtages håndskrevne timesedler.
-# Alt sammen leveret på e-mail hvor vi i dag modtager mere end 50 forskellige timesedler design
-# Dette vil vi gerne gøre smartere. Der er stor løsningsfrihed Til at løse opgaven.
-#
-# Non-funktionelle krav:
-# - Det skal være nemt for brugeren at indtaste eller uploade,
-#  så byrden for konsulenten er så lille som mulig.
-#
-# Funktionelle krav:
-# - Der skal være en sum af arbejdstimerne for perioden.
-# - Prototype, samt reflektion over løsning - fordele / ulemper ønskes.
-# 
-# Formål:
-# Jeg ønsker, at se hvordan du tænker og få et indblik i din kode.
-# Der er som sagt ikke noget rigtigt og forkert – vær kreativ og løs det som du synes bedst.
-#
-#
-# Kind regards
-#
-# Simon Kröger Kronmose
-# Digitalization, Partner
-# Northern Partners ApS
+## Kontekst:
+Vi skal i fremtiden håndtere Timesedler automatisk.
+Projektopgaven er at lave en timeseddelsløsning som gør det nemt for medarbejdere,
+at rapportere arbejdsdage / timer.
+ 
+I dag modtager vi timesedler for månedslønnede, 14 dages lønnede eller ugelønnede.
+Disse kommer fra mange forskellige timesystemer eller er blevet lavet manuelt af konsulenten selv
+og leveret igennem Excel skabeloner konverteret til PDF.
+
+I nogle tilfælde modtages håndskrevne timesedler.
+Alt sammen leveret på e-mail hvor vi i dag modtager mere end 50 forskellige timesedler design
+Dette vil vi gerne gøre smartere. Der er stor løsningsfrihed Til at løse opgaven.
+
+## Non-funktionelle krav:
+- Det skal være nemt for brugeren at indtaste eller uploade, så byrden for konsulenten er så lille som mulig.
+
+## Funktionelle krav:
+- Der skal være en sum af arbejdstimerne for perioden.
+- Prototype, samt reflektion over løsning - fordele / ulemper ønskes.
+ 
+## Formål:
+- Jeg ønsker, at se hvordan du tænker og få et indblik i din kode.
+- Der er som sagt ikke noget rigtigt og forkert – vær kreativ og løs det som du synes bedst.
+
+Kind regards
+Simon Kröger Kronmose
+Digitalization, Partner
+Northern Partners ApS
