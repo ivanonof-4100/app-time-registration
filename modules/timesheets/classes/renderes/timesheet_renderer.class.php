@@ -58,13 +58,17 @@ class TimesheetRenderer extends StdRenderer {
                                                                       $p_employeeUUID,
                                                                       $datetimeWeekDateStart->format(CustomDateTime::getISODateFormat()),
                                                                       $datetimeWeekDateEnd->format(CustomDateTime::getISODateFormat()));
+        if (empty($arrRegisteredData)) {
+          // There are not any data for the period yet - set default.
+          $arrAccumulatedHours[] = ['total_hours_regular' => (float) 0, 'total_hours_overtime' => (float) 0, 'total_hours_break' => (float) 0];
+        } else {
+          // Retrive the accumulated hours for the period from the database.
+          $arrAccumulatedHours = Timesheet::retriveAccumulatedHours($p_dbAbstraction,
+                                                                    $p_employeeUUID,
+                                                                    $datetimeWeekDateStart->format(CustomDateTime::getISODateFormat()),
+                                                                    $datetimeWeekDateEnd->format(CustomDateTime::getISODateFormat()));
+        }
 
-        // Retrive the accumulated hours for the period.
-        $arrAccumulatedHours = Timesheet::retriveAccumulatedHours($p_dbAbstraction,
-                                                                  $p_employeeUUID,
-                                                                  $datetimeWeekDateStart->format(CustomDateTime::getISODateFormat()),
-                                                                  $datetimeWeekDateEnd->format(CustomDateTime::getISODateFormat())
-                                                                );
         // Week-days
         $datetimeWorkDay = clone $datetimeWeekDateStart;
         for ($daySeq =1; $daySeq <=7; $daySeq++) {
