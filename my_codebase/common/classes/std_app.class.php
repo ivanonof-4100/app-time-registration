@@ -103,10 +103,13 @@ class StdApp
 
    public function setPath_appRoot() : void {
       $strPath_appRoot = CustomString::getInstance(self::getDocumentRoot(), 'UTF-8');
-      $searchStr = self::PATH_DELIMITER .'app'. self::PATH_DELIMITER;
+      // The app-directory is the one that has app in it like app-name or just app
+      $searchStr = self::PATH_DELIMITER .'app';
       $posFirstOccurrence = $strPath_appRoot->getPosition_firstOccurrence($searchStr);
-      $strTruncateLength = $posFirstOccurrence +5;
-      $this->pathAppRoot = $strPath_appRoot->getSubString_truncatedAtLength($strTruncateLength);  
+
+      // Then find the next directory-delimitor
+      $posTruncate = $strPath_appRoot->getPosition_firstOccurrence(self::PATH_DELIMITER, $posFirstOccurrence+1);
+      $this->pathAppRoot = $strPath_appRoot->getSubString_truncatedAtLength($posTruncate+1);
    }
 
    /**

@@ -1,8 +1,8 @@
 <?php
 const APP_DEBUG_MODE = FALSE;
 const APP_SECURITY_TOKEN = 'n1mFGz2XGh9VE1so7DmEEYubQ065OsRxYsEVonJp';
-//const APP_ROOT_PATH = __DIR__ .'/../';
-const APP_ROOT_PATH = '/data/WebProjects/Northern-partners/Projekt-timeseddler/app/';
+// const APP_ROOT_PATH = __DIR__ .'/../';
+const APP_ROOT_PATH = '/data/WebProjects/Northern-partners/Projekt-timeseddler/app-time-registration/';
 const CODEBASE_ROOT_PATH = APP_ROOT_PATH .'my_codebase/';
 
 const APP_LANGUAGE_IDENT ='da';
