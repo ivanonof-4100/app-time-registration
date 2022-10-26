@@ -59,13 +59,12 @@ class StdApp
       $this->setPath_logFiles();
       $this->setPath_languageFiles();
 
-      // Setup error-handling.
-      $this->setupErrorReporting();
-
       // Load configuration-file of the app.
       $this->loadAppConfiguration();
+
+      // Setup error-handling.
+      $this->setupErrorReporting();
       $this->setupErrorHandler();
-//      $this->registerAutoloader();
       $this->registerRouteHandler();
    }
 
@@ -223,10 +222,6 @@ class StdApp
     * @return void
     */
    public static function setupErrorReporting() : void {
-     if (!defined('APP_DEBUG_MODE')) {
-       define('APP_DEBUG_MODE', FALSE);
-     }
-
      if (APP_DEBUG_MODE) {
        // Set reported errors in Debug-mode
        self::setPHPConfigParameter('display_startup_errors', '1');
