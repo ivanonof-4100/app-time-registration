@@ -30,16 +30,16 @@ class TimesheetController extends StdController {
     /**
      * Constructor
      */
-    public function __construct(StdApp $p_appInstance, string $p_lang ='da', string $p_charset ='utf8') {
+    public function __construct(StdApp $p_appInstance, string $p_lang =APP_LANGUAGE_IDENT, string $p_charset ='utf8') {
       parent::__construct($p_lang, $p_charset);
       // Init StdApp instance in the app-registry
       $this->setAppInstance($p_appInstance);
 
       $arrInputParam_print = $this->retriveInputParameter('print', 'boolean', '_GET');
       if ($arrInputParam_print['is_set'] && $arrInputParam_print['is_valid']) {
-        $this->rendererInstance = TimesheetRenderer::getInstance($this->getInstance_languageFileHandler(), $arrInputParam_print['value']);
+        $this->rendererInstance = TimesheetRenderer::getInstance($this->getInstance_languageFileHandler($p_lang), $arrInputParam_print['value']);
       } else {
-        $this->rendererInstance = TimesheetRenderer::getInstance($this->getInstance_languageFileHandler());
+        $this->rendererInstance = TimesheetRenderer::getInstance($this->getInstance_languageFileHandler($p_lang));
       }
     }
 
