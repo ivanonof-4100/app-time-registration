@@ -7,6 +7,9 @@ $lang['CUSTOM_DATETIME_WEEKDAY_4'] = 'torsdag';
 $lang['CUSTOM_DATETIME_WEEKDAY_5'] = 'fredag';
 $lang['CUSTOM_DATETIME_WEEKDAY_6'] = 'lørdag';
 $lang['CUSTOM_DATETIME_WEEKDAY_7'] = 'søndag';
+// Week
+$lang['CUSTOM_DATETIME_WEEK'] = 'Uge: %02d, %04d';
+$lang['CUSTOM_DATETIME_WEEK_SHORT'] = 'Uge %d';
 // Months
 $lang['CUSTOM_DATETIME_MONTH_01'] = 'januar';
 $lang['CUSTOM_DATETIME_MONTH_02'] = 'februar';

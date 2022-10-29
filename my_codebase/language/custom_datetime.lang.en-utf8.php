@@ -8,7 +8,8 @@ $lang['CUSTOM_DATETIME_WEEKDAY_5'] = 'friday';
 $lang['CUSTOM_DATETIME_WEEKDAY_6'] = 'saturday';
 $lang['CUSTOM_DATETIME_WEEKDAY_7'] = 'sunday';
 // Week
-$lang['CUSTOM_DATETIME_WEEK'] = 'Uge: %02d, %04d';
+$lang['CUSTOM_DATETIME_WEEK'] = 'Week: %02d, %04d';
+$lang['CUSTOM_DATETIME_WEEK_SHORT'] = 'Week %d';
 // Months
 $lang['CUSTOM_DATETIME_MONTH_01'] = 'january';
 $lang['CUSTOM_DATETIME_MONTH_02'] = 'february';

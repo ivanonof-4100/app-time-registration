@@ -23,6 +23,22 @@ class TimesheetRenderer extends StdRenderer {
     }
 
     /**
+     * Generate options-array to be able to select a specific week in the front-end.
+     * @param LanguagefileHandler
+     * @return array
+     */
+    public function getOptions_weeks(LanguagefileHandler $p_languagefileHandler) : array {
+      $customDateTime = CustomDateTime::getInstance();
+      $curWeekNumber = $customDateTime->getWeekNumber();
+
+      $arrOptions_weeks = array();
+      for ($week =1; ($week <= $curWeekNumber); $week++) {
+        $arrOptions_weeks["$week"] = $p_languagefileHandler->getEntryContent('CUSTOM_DATETIME_WEEK_SHORT', $week);
+      }
+      return $arrOptions_weeks;
+    }
+
+    /**
      * @param DBAbstraction
      * @param string $p_employeeUUID
      * @param int $p_weekNumber Default zero.
@@ -52,6 +68,9 @@ class TimesheetRenderer extends StdRenderer {
         $datetimeWeekDateStart = $customDateTime->getInstance_dateTime();
         $customDateTime->setDate_toWeekEnd($yearNumber, $weekNumber);
         $datetimeWeekDateEnd = $customDateTime->getInstance_dateTime();
+
+        // Generate options-array to be able to select a specific week in the front-end.
+        $arrOptions_weeks = $this->getOptions_weeks($languagefileHandler);
 
         // Get all existing data for the period using a single query.
         $arrRegisteredData = Timesheet::retriveRegisteredData_asAssocArray($p_dbAbstraction,
@@ -114,6 +133,7 @@ class TimesheetRenderer extends StdRenderer {
         $template->assign('arrWeekdays', $arrWeekdays);
         $template->assign('arrAccumulatedHours', $arrAccumulatedHours[0]);
         $template->assign('totalHours', array_sum($arrAccumulatedHours[0]));
+        $template->assign('arrOptions_weeks', $arrOptions_weeks);
 
         // We also need to pass employee_uuid
         $template->assign('employeeUuid', $p_employeeUUID); // TEST employee: Dr. John Doe ;-)
