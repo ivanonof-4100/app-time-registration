@@ -9,7 +9,7 @@ use Common\Classes\Db\DBAbstraction;
  *   Script-name: std_model.class.php
  *      Language: PHP v7.4
  *  Date created: 24/01-2014, Ivan
- * Last modified: 08/10-2022, Ivan
+ * Last modified: 25/03-2023, Ivan
  *    Developers: @author Ivan Mark Andersen <ivanonof@gmail.com>
  *    @copyright: Copyright (C) 2014 by Ivan Mark Andersen
  *
@@ -93,7 +93,7 @@ abstract class StdModel
    * @return mixed
    * @throws InvalidPropertyReferenceException
    */
-  public function __get($p_propertyName) {
+  public function __get(string $p_propertyName) {
      if (!$this->doesPropertyExists($p_propertyName)) {
        throw new InvalidPropertyReferenceException(sprintf("Referenced object-property %s doesn\'t exists ...", $p_propertyName));
      } else {
@@ -107,7 +107,7 @@ abstract class StdModel
    * @param string $p_propertyName
    * @return bool
    */
-  public function doesPropertyExists($p_propertyName) : bool {
+  public function doesPropertyExists(string $p_propertyName) : bool {
      return property_exists($this, $p_propertyName);
   }
 
@@ -231,17 +231,85 @@ abstract class StdModel
   }
 
   /**
-   * OLD way of doing things!
-   * Retrives the instance of the active database-connection stored in the codebase-registry.
-   * @param mixed $p_ctrlObj
+   * Inserts the objects data in the database.
+   * @param DBAbstraction $p_dbAbstraction
+   * @return bool
    */
-  public static function getInstance_activeDatabaseConnection($p_ctrlObj) {
-	   if (is_object($p_ctrlObj) && is_subclass_of($p_ctrlObj, 'StdController')) {
-	     // Return the database-connection hold in the codebase-registry.
-       $codebaseRegistryObj = $p_ctrlObj->getInstance_codebaseRegistry();
-       return $codebaseRegistryObj->getInstance_dbConnection();
-	   } else {
-       trigger_error(__METHOD__ .': Unable to retrieve active-database connection ...', E_USER_ERROR);
-	   }
-  }
+   public function addPersistentRecord(DBAbstraction $p_dbAbstraction) {
+   }
+
+   /**
+    * Updates the objects data in the database.
+    * @param DBAbstraction $p_dbAbstraction
+    * @return bool
+    */
+   public function updPersistentRecord(DBAbstraction $p_dbAbstraction) {
+   }
+ 
+   /**
+    * Deletes the objects data in the database.
+    * @param DBAbstraction $p_dbAbstraction
+    * @return bool
+    */
+   public function delPersistentRecord(DBAbstraction $p_dbAbstraction) {
+   }
+
+  /**
+   * Saves the objects data in a persistent and generic way.
+   * 
+   * @param DBAbstraction $p_dbAbstraction
+   * @param bool $p_handleTransaction Default boolean TRUE.
+   * @return bool
+   * @throws Exception
+   */
+  public function save(DBAbstraction $p_dbAbstraction, bool $p_handleTransaction =TRUE) : bool {
+   /*
+    * Check the _rowstate attribute of the instance to see how to save it in the database.
+    * 
+    * The _rowstate attribute can take the the following values:
+    *  ROWSTATE_UNCHANGED: Row not touched, data is the same as since it was loaded from a database
+    *                      Do nothing with this row!
+    *  ROWSTATE_CHANGED  : Data has been changed and needs to be updated.
+    *  ROWSTATE_DELETED  : Data has been marked as deleted and needs to be removed in database.
+    *  ROWSTATE_INSERTED : New data has been added and needs to be added in the database too.
+    */
+   if (is_object($p_dbAbstraction) && ($p_dbAbstraction instanceof DBAbstraction)) {
+     if ($p_handleTransaction) {
+       // Start Transaction
+       $wasSuccessful = $p_dbAbstraction->beginTransaction();
+     }
+   } else {
+     trigger_error('Database-connection does not meet the criterias ...', E_USER_ERROR);
+     exit(1);
+   }
+
+   try {
+     if ($this->isMarkedAsChanged()) {
+       $wasSuccessful = $this->updPersistentRecord($p_dbAbstraction);
+     } elseif ($this->isMarkedAsInserted()) {
+       $wasSuccessful = $this->addPersistentRecord($p_dbAbstraction);
+     } elseif ($this->isMarkedAsDeleted()) {
+       $wasSuccessful = $this->delPersistentRecord($p_dbAbstraction);
+     }
+ 
+     if ($p_handleTransaction) {
+       if ($wasSuccessful) {
+         $wasSuccessful = $p_dbAbstraction->commit();
+       } else {
+         $wasNotSuccessful = $p_dbAbstraction->rollback();
+       }
+     }
+
+     if ($wasSuccessful) {
+        // Reset the status of the record (_rowstate)
+       $this->resetRowstate();
+     }
+
+     // Return the result of persistent operation only on data and commit - NOT rollback!
+     return ($wasSuccessful === TRUE) ? $wasSuccessful : FALSE;
+   } catch (Exception $e) {
+     $wasNotSuccessful = $p_dbAbstraction->rollback();
+     throw $e; // Re-throw exception again to catch at a higher controller-level.
+   }
+ }
 } // End class

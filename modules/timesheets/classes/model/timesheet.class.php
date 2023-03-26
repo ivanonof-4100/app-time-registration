@@ -15,7 +15,7 @@ use PDOException;
  * Filename     : timesheet.class.php
  * Language     : PHP v7.4
  * Date created : 29/09-2022, Ivan
- * Last modified: 08/10-2022, Ivan
+ * Last modified: 25/03-2023, Ivan
  * Developers   : @author Ivan Mark Andersen <ivanonof@gmail.com>
  * @copyright   : Copyright (C) 2022 by Ivan Mark Andersen
  *
@@ -25,6 +25,7 @@ use PDOException;
 class Timesheet extends StdModel implements SaveableObjectInterface
 {
     const db_table_name = 'timesheet';
+    const db_table_alias = 't';
 
     /**
      * A Universally Unique IDentifier (UUID) its unique in the whole world.
@@ -229,10 +230,10 @@ class Timesheet extends StdModel implements SaveableObjectInterface
         if (!$pdoStatement) {
           trigger_error(__METHOD__ .': Unable to prepare the SQL-statement. The message was the following: '. $dbPDOConnection->errorInfo(), E_USER_ERROR);
         } else {
-          // Execute and return the boolean-result.
           try {
             // Map parameters
             $pdoStatement->bindParam(':timesheet_uuid', $p_objUuid, PDO::PARAM_STR);
+            // Execute and return the boolean-result.
             return $p_dbAbstraction->fetchBooleanResult($pdoStatement);
           } catch (PDOException $e) {
             echo $e->getMessage();
@@ -315,13 +316,13 @@ class Timesheet extends StdModel implements SaveableObjectInterface
          // Setup the SQL-statment.
          $sql = 'SELECT t.timesheet_uuid, t.employee_uuid, t.timesheet_work_date, t.timesheet_hours_regular, t.timesheet_hours_overtime, t.timesheet_hours_break';
          $sql .= PHP_EOL;
-         $sql .= 'FROM timesheet t';
+         $sql .= sprintf('FROM %s %s', self::db_table_name, self::db_table_alias);
          $sql .= PHP_EOL;
-         $sql .= 'WHERE t.employee_uuid = :timesheet_employee_uuid';
+         $sql .= sprintf('WHERE %s.employee_uuid = :timesheet_employee_uuid', self::db_table_alias);
          $sql .= PHP_EOL;
-         $sql .= 'AND t.timesheet_work_date BETWEEN :week_from_date AND :week_to_date';
+         $sql .= sprintf('AND %s.timesheet_work_date BETWEEN :week_from_date AND :week_to_date', self::db_table_alias);
          $sql .= PHP_EOL;
-         $sql .= 'ORDER BY t.timesheet_work_date ASC';
+         $sql .= sprintf('ORDER BY %s.timesheet_work_date ASC', self::db_table_alias);
 
          // Prepare and execute the SQL-statement.
          $pdoStatement = $dbPDOConnection->prepare($sql);
@@ -372,11 +373,11 @@ class Timesheet extends StdModel implements SaveableObjectInterface
          /* Setup SQL-statement that calculates the total regular, overtime & break hours for a given period. */
          $sql = "SELECT SUM(t.timesheet_hours_regular) AS total_hours_regular, SUM(t.timesheet_hours_overtime) AS total_hours_overtime, SUM(t.timesheet_hours_break) AS total_hours_break";
          $sql .= PHP_EOL;
-         $sql .= 'FROM timesheet t';
+         $sql .= sprintf('FROM %s %s', self::db_table_name, self::db_table_alias);
          $sql .= PHP_EOL;
          $sql .= "WHERE t.employee_uuid = :employee_uuid";
          $sql .= PHP_EOL;
-         $sql .= "AND t.timesheet_work_date BETWEEN :week_from_date AND :week_to_date";
+         $sql .= "AND t.timesheet_work_date BETWEEN :period_from_date AND :period_to_date";
          $sql .= PHP_EOL;
          $sql .= 'GROUP BY t.employee_uuid';
 
@@ -388,8 +389,8 @@ class Timesheet extends StdModel implements SaveableObjectInterface
            try {
             // Map parameters and execute.
             $pdoStatement->bindParam(':employee_uuid', $p_employeeUuid, PDO::PARAM_STR);
-            $pdoStatement->bindParam(':week_from_date', $p_isoDateFrom, PDO::PARAM_STR);
-            $pdoStatement->bindParam(':week_to_date', $p_isoDateTo, PDO::PARAM_STR);
+            $pdoStatement->bindParam(':period_from_date', $p_isoDateFrom, PDO::PARAM_STR);
+            $pdoStatement->bindParam(':period_to_date', $p_isoDateTo, PDO::PARAM_STR);
 
             // Run the SQL-statment against the database.
             $pdoStatement->execute();
@@ -520,98 +521,39 @@ class Timesheet extends StdModel implements SaveableObjectInterface
        }
     }
 
-   /**
-    * Deletes or removes data or rows from the database-table.
-    * @param DBAbstraction $p_dbAbstraction
-    * @return bool
-    */
-    public function delPersistentRecord(DBAbstraction $p_dbAbstraction) : bool {
-      $dbPDOConnection = $p_dbAbstraction->getPDOConnectionInstance();
-      if (self::doesDatabaseConnection_meetCriterias($dbPDOConnection)) {
-        // Setup the SQL-statement.
-        $sql = sprintf('DELETE FROM %s', self::db_table_name);
-        $sql .= PHP_EOL;
-        $sql .= 'WHERE timesheet_uuid = :timesheet_uuid';
+  /**
+   * Deletes or removes data or rows from the database-table.
+   * @param DBAbstraction $p_dbAbstraction
+   * @return bool
+   */
+  public function delPersistentRecord(DBAbstraction $p_dbAbstraction) : bool {
+    $dbPDOConnection = $p_dbAbstraction->getPDOConnectionInstance();
+    if (self::doesDatabaseConnection_meetCriterias($dbPDOConnection)) {
+      // Setup the SQL-statement.
+      $sql = sprintf('DELETE FROM %s', self::db_table_name);
+      $sql .= PHP_EOL;
+      $sql .= 'WHERE timesheet_uuid = :timesheet_uuid';
 
-        // Prepare and execute the SQL-statement.
-        $pdoStatementObj = $dbPDOConnection->prepare($sql);
-        if (!$pdoStatementObj) {
-          trigger_error(__METHOD__ .': Unable to prepare the SQL-statement. The message was the following: '. $dbPDOConnection->errorInfo(), E_USER_ERROR);
-        } else {
+      // Prepare and execute the SQL-statement.
+      $pdoStatementObj = $dbPDOConnection->prepare($sql);
+      if (!$pdoStatementObj) {
+        trigger_error(__METHOD__ .': Unable to prepare the SQL-statement. The message was the following: '. $dbPDOConnection->errorInfo(), E_USER_ERROR);
+      } else {
+        try {
+          // Map parameters and execute.
+          $paramTimesheetUUID = $this->getAttr_timesheet_uuid();
+          $pdoStatementObj->bindParam(':timesheet_uuid', $paramTimesheetUUID, PDO::PARAM_STR);
           try {
-            // Map parameters and execute.
-            $paramTimesheetUUID = $this->getAttr_timesheet_uuid();
-            $pdoStatementObj->bindParam(':timesheet_uuid', $paramTimesheetUUID, PDO::PARAM_STR);
-            try {
-              return $pdoStatementObj->execute();
-            } catch (PDOException $e) {
-              echo $e->getMessage();
-            }
+            return $pdoStatementObj->execute();
           } catch (PDOException $e) {
             echo $e->getMessage();
           }
+        } catch (PDOException $e) {
+          echo $e->getMessage();
         }
-      } else {
-        trigger_error('Unable execute delete-statment because of unavailable active database-connection ...', E_USER_ERROR);
-      }
-    }
-
-  /**
-   * Saves the objects data in a persistent and generic way.
-   * 
-   * @param DBAbstraction $p_dbAbstraction
-   * @param bool $p_handleTransaction Default boolean TRUE.
-   * @return bool
-   * @throws Exception
-   */
-  public function save(DBAbstraction $p_dbAbstraction, bool $p_handleTransaction =TRUE) : bool {
-    /*
-     * Check the _rowstate attribute of the instance to see how to save it in the database.
-     * 
-     * The _rowstate attribute can take the the following values:
-     *  ROWSTATE_UNCHANGED: Row not touched, data is the same as since it was loaded from a database
-     *                      Do nothing with this row!
-     *  ROWSTATE_CHANGED  : Data has been changed and needs to be updated.
-     *  ROWSTATE_DELETED  : Data has been marked as deleted and needs to be removed in database.
-     *  ROWSTATE_INSERTED : New data has been added and needs to be added in the database too.
-     */
-    if (is_object($p_dbAbstraction) && ($p_dbAbstraction instanceof DBAbstraction)) {
-      // Start Transaction
-      if ($p_handleTransaction) {
-        $wasSuccessful = $p_dbAbstraction->beginTransaction();
       }
     } else {
-      trigger_error('Database-connection does not meet the criterias ...', E_USER_ERROR);
-      exit(1);
-    }
-
-    try {
-      if ($this->isMarkedAsChanged()) {
-        $wasSuccessful = $this->updPersistentRecord($p_dbAbstraction);
-      } elseif ($this->isMarkedAsInserted()) {
-        $wasSuccessful = $this->addPersistentRecord($p_dbAbstraction);
-      } elseif ($this->isMarkedAsDeleted()) {
-        $wasSuccessful = $this->delPersistentRecord($p_dbAbstraction);
-      }
-  
-      if ($p_handleTransaction) {
-        if ($wasSuccessful) {
-          $wasSuccessful = $p_dbAbstraction->commit();
-        } else {
-          $wasNotSuccessful = $p_dbAbstraction->rollback();
-        }
-      }
-
-      if ($wasSuccessful) {
-      	// Reset the status of the record (_rowstate)
-        $this->resetRowstate();
-      }
-
-      // Return the result of persistent operation only on data and commit - NOT rollback!
-      return ($wasSuccessful === TRUE) ? $wasSuccessful : FALSE;
-    } catch (Exception $e) {
-      $wasNotSuccessful = $p_dbAbstraction->rollback();
-      throw $e; // Re-throw exception again to catch at a higher controller-level.
+      trigger_error('Unable execute delete-statment because of unavailable active database-connection ...', E_USER_ERROR);
     }
   }
 } // End class
