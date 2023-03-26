@@ -71,9 +71,9 @@ class DBAbstraction
     }
     
     /**
-     * @param string $p_dbCodepage Default 'utf8'.
+     * @param string $p_dbCodepage Default 'utf8mb4'.
      */
-    protected function setAttr_dbCodepage(string $p_dbCodepage ='utf8') : void {
+    protected function setAttr_dbCodepage(string $p_dbCodepage ='utf8mb4') : void {
         $this->dbCodepage = (string) $p_dbCodepage;
     }
 
