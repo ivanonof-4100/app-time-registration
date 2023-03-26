@@ -4,9 +4,9 @@ use SessionHandler;
 
 /**
  * @name        : CustomSessionHandler
- * @version     : 1.0.1
+ * @version     : v2.0
  * Date created : 05/11-2016
- * Date modifyed: 05/11-2016 
+ * Date modified: 07/01-2023 
  * @author      : Ivan Mark Andersen <ivanonof@gmail.com>
  * @copyright   : Copyright (C) 2016 by Ivan Mark Andersen
  *
@@ -18,6 +18,16 @@ use SessionHandler;
 class CustomSessionHandler extends SessionHandler
 {
   /**
+   * @var string
+   */
+  protected $session_path;
+
+  /**
+   * @var int
+   */
+  protected $session_lifetime;
+
+  /**
    * The class constructor.
    * @access public
    * 
@@ -28,9 +38,18 @@ class CustomSessionHandler extends SessionHandler
    */
   public function __construct(int $p_sessionExpiresInSecs =1800, string $p_sessionName ='PHPSESSID') {
     if (!$this->hasSessionStarted()) {
+      $sessionPath = '/tmp/';
+      $secure = false;
+      $httponly = false;
+      if (php_sapi_name() == 'cli') {
+        $sessionDomain = SITE_DOMAIN_NAME;
+      } else {
+        $sessionDomain = $_SERVER['SERVER_NAME'];
+      }
+
   	  // session_set_save_handler(array($this, 'start'), array($this, 'stop')/*, array($this, 'read'), array($this, 'write')*/, array($this, 'destroy'), array($this, 'gc'));
       ini_set('session.use_strict_mode', 0);
-      ini_set('session.save_path', '/tmp/'); // Where the session-files are saved if not in DB.
+      ini_set('session.save_path', $sessionPath); // Where the session-files are saved if not in DB.
       // Specifies whether the session module starts a session automatically on request startup. Defaults to 0 (disabled). 
       ini_set('session.auto_start', 0);
 
@@ -50,10 +69,18 @@ class CustomSessionHandler extends SessionHandler
       ini_set('session.gc_probability', 100);
       ini_set('session.gc_divisor', 100);
 
-      $this->setName($p_sessionName);
-
       // Set the session-cookie to expire in an half an hour by default.
-      $this->setCookie($p_sessionExpiresInSecs);
+      $arrSessionOptions = array(
+        'lifetime' => $p_sessionExpiresInSecs,
+        'path' => $sessionPath,
+        'domain' => $sessionDomain,
+        'secure' => $secure,
+        'httponly' => $httponly,
+        'samesite' => 'Strict' /* 'None', 'Lax', 'Strict' */
+      );
+
+      $this->setName($p_sessionName);
+      $this->setCookie($arrSessionOptions);
     }
   }
 
@@ -142,16 +169,18 @@ class CustomSessionHandler extends SessionHandler
   }
 
   /**
+   * @param int $p_numOfChars Default 26
    * @return string
    */
-  public function generateCustomSessionID($p_numOfChars =26) : string {
+  public function generateCustomSessionID(int $p_numOfChars =26) : string {
       $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789,-';
       srand((double)microtime()*1000000);
       $idx = 0;
       $sessId = '';
       while ($idx < $p_numOfChars)
       {
-        $num = rand() % 33;
+        $num = mt_rand(0, strlen($chars));
+        // $num = mt_rand(1, strlen($chars)) % 33;
         $tmp = substr($chars, $num, 1);
         $sessId = $sessId . $tmp;
         $idx++;
@@ -318,18 +347,10 @@ class CustomSessionHandler extends SessionHandler
    * setCookie - Set the session-cookie parameters.
    *
    * @access public
-   * @param integer life time
-   * @param string path
-   * @param string domain
+   * @param array $p_arrSessionOptions
    */
-  public function setCookie($intTime, $strPath =null, $strDomain =null) {
-    if (isset($strPath) && isset($strDomain)) {
-      session_set_cookie_params($intTime, $strPath, $strDomain);
-    } elseif (isset($strPath)) {
-      session_set_cookie_params($intTime, $strPath);
-    } else {
-      session_set_cookie_params($intTime);
-    }
+  public function setCookie(array $p_arrSessionOptions) {
+    session_set_cookie_params($p_arrSessionOptions);
   }
 
   /**
