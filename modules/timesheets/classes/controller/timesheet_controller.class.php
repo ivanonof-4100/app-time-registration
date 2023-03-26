@@ -4,6 +4,7 @@ namespace App\Modules\Timesheets\Classes\Controller;
 use Exception;
 use Common\Classes\StdApp;
 use Common\Classes\Controller\StdController;
+use Common\Classes\Controller\StdControllerInterface;
 use App\Modules\Timesheets\Classes\Renderes\TimesheetRenderer;
 use App\Modules\Timesheets\Classes\Model\Timesheet;
 use Common\Classes\InputHandler;
@@ -20,7 +21,7 @@ use Common\Classes\InputHandler;
  * Description:
  *  This class handles the flow-control and all the coordination in the proces of handling everything about timesheets.
  */
-class TimesheetController extends StdController {
+class TimesheetController extends StdController implements StdControllerInterface {
     // Attributes
     /**
      * @var TimesheetRenderer
@@ -30,10 +31,10 @@ class TimesheetController extends StdController {
     /**
      * Constructor
      */
-    public function __construct(StdApp $p_appInstance, string $p_lang =APP_LANGUAGE_IDENT, string $p_charset ='utf8') {
-      parent::__construct($p_lang, $p_charset);
+    public function __construct(string $p_lang =APP_LANGUAGE_IDENT, string $p_charset ='utf8', StdApp $p_appInstance) {
+      parent::__construct($p_lang, $p_charset, $p_appInstance);
       // Init StdApp instance in the app-registry
-      $this->setAppInstance($p_appInstance);
+//      $this->setAppInstance($p_appInstance);
 
       $arrInputParam_print = $this->retriveInputParameter('print', 'boolean', '_GET');
       if ($arrInputParam_print['is_set'] && $arrInputParam_print['is_valid']) {
@@ -54,8 +55,11 @@ class TimesheetController extends StdController {
     /**
      * @return TimesheetController
      */
-    public static function getInstance($p_appInstance) : TimesheetController {
-        return new TimesheetController($p_appInstance);
+    public static function getInstance(string $p_lang ='da', string $p_charset ='utf8', StdApp $p_appInstance) : TimesheetController {
+        $timesheetController = new TimesheetController($p_lang, $p_charset, $p_appInstance);
+        // Initialize dependencies and the registry of the web-app.
+        $timesheetController->initDependencies();
+        return $timesheetController;
     }
 
     /**
@@ -151,5 +155,30 @@ class TimesheetController extends StdController {
                                                       $employeeUUID);
           }
         }
+    }
+
+    /**
+     * Dont render any thing - Return a json-string that contains the valid data found in the database.
+     * SEE: https://www.php.net/manual/en/function.json-encode
+     * @return void
+     */
+    public function handleAPIRequest_annualOverview() : void {
+      if (self::isRequestMethod_GET()) {
+        $arrInputParam_employeeUUID = $this->retriveInputParameter('employee_uuid', 'uuid', '_GET');
+        $arrInputParam_year = $this->retriveInputParameter('year', 'pos_int', '_GET');
+
+        if ($arrInputParam_employeeUUID['is_set'] && $arrInputParam_employeeUUID['is_valid']) {
+          // Okay, we have a valid Employee-UUID
+          $arr = array('employee_uuid' => $arrInputParam_employeeUUID['value'], 'accumulated_hours' => 2, 'c' => 3, 'd' => 4, 'e' => 5);
+          http_response_code(200);
+          echo json_encode($arr);
+          exit(0);
+        } else {
+          // Invalid user-input
+          http_response_code(404);
+          echo 'Invalid user-input';
+          exit(1);
+        }
+      }
     }
 } // End class

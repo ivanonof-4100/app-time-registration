@@ -43,6 +43,22 @@ $ composer dump-autoload
 Generating autoload files
 Generated autoload files
 
+# Setup the JSON config-file in the config directory
+Edit the file config/app.conf.json
+Add the following JSON-structure and you will be able to succesfully connect to your MySQL database:
+
+{
+    "path_app_root": "/data/WebProjects/app-time-registration/",
+    "db_connection": {
+        "driver": "mysql",
+        "host": "localhost",
+        "dbname": "dbname",
+        "dbcodepage": "utf8mb4",
+        "dbuser": "dbusr_web_user",
+        "dbpassword": "secretpassword"
+    }
+}
+
 # Setup the virtual web-server i run NginX on my Linux-box
 
 # Setup the DNS-name for the hostname in /etc/hosts file

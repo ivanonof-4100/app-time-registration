@@ -38,11 +38,11 @@ class MySQLDBAbstraction extends DBAbstraction
     *
     * @param string $p_dbHost
     * @param string $p_dbName
-    * @param string $p_dbCodepage Default 'utf8'
+    * @param string $p_dbCodepage Default 'utf8mb4'
     *
     * @return MySQLDBAbstraction
     */
-   public function __construct($p_dbHost, $p_dbName, $p_dbCodepage ='utf8mb3', $p_dbCacheBuffers =FALSE) {
+   public function __construct($p_dbHost, $p_dbName, $p_dbCodepage ='utf8mb4') {
       parent::__construct();
       $this->setAttr_dbHost($p_dbHost);
       $this->setAttr_dbName($p_dbName);
@@ -57,37 +57,29 @@ class MySQLDBAbstraction extends DBAbstraction
    /**
     * @param string $p_dbHost
     * @param string $p_dbName
-    * @param string $p_dbCodepage Default 'utf8mb3'
+    * @param string $p_dbCodepage Default 'utf8mb4'
     * @param bool $p_dbCacheBuffers Default boolean FALSE.
     * @return MySQLDBAbstraction
     */
-   public static function getInstance(string $p_dbHost, string $p_dbName, string $p_dbCodepage ='utf8mb3', bool $p_dbCacheBuffers =FALSE) : MySQLDBAbstraction {
+   public static function getInstance(string $p_dbHost, string $p_dbName, string $p_dbCodepage ='utf8mb4', bool $p_dbCacheBuffers =FALSE) : MySQLDBAbstraction {
       return new MySQLDBAbstraction($p_dbHost, $p_dbName, $p_dbCodepage, $p_dbCacheBuffers);
    }
 
    // Service methods
 
    /**
+    * @param string $p_userName
+    * @param string $p_userPasswd
     * @return PDO
     * @throws Exception
     */
-   public function initDatabaseConnection() : PDO {
-      if (!defined('RDBMS_USER_NAME')) {
-        throw new Exception('Constant holding the user-name to connect to the RDBMS is not defined, at the time connecting ...');
-        exit(8);
-      }
-
-      if (!defined('RDBMS_USER_PASSWD')) {
-        throw new Exception('Constant holding the user-password to connect to the RDBMS is not defined, at the time connecting ...');
-        exit(8);
-      }
-
+   public function initDatabaseConnection(string $p_userName, string $p_userPasswd) : PDO {
       try {
         if (self::isRequiredPDODriverInstalled()) {
           if (self::isRDBMSRunning()) {
             try {
               // Connect to the database using database-abstraction.
-              return $this->connect(RDBMS_USER_NAME, RDBMS_USER_PASSWD);
+              return $this->connect($p_userName, $p_userPasswd);
             } catch (Exception $e) {
               self::logError($e->getMessage());
               exit(2);

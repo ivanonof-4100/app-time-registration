@@ -1,10 +1,10 @@
 <?php
 namespace Common\Classes;
 
-// use Common\Classes\CustomAutoloader;
 use Common\Classes\CustomRouteHandler;
 use Common\Classes\CustomErrorHandler;
 use Common\Classes\CustomString;
+use Common\Classes\JsonConfigReader;
 use Exception;
 
 /**
@@ -13,7 +13,7 @@ use Exception;
  * Date created : 27/12-2020, Ivan
  * Last modified: 27/09-2022, Ivan
  * Developers   : @author Ivan Mark Andersen <ivanonof@gmail.com>
- * @copyright   : Copyright (C) 2022, 2020 by Ivan Mark Andersen
+ * @copyright   : Copyright (C) 2023, 2022 by Ivan Mark Andersen
  *
  * Description:
  *  My standard app class.
@@ -23,6 +23,12 @@ class StdApp
    const PATH_DELIMITER = '/';
 
    // Attributes
+
+   /**
+    * @var array $settings
+    */
+   protected $settings;
+
    /**
     * @var string $pathAppRoot
     */
@@ -34,13 +40,16 @@ class StdApp
    protected $pathCodebaseRoot;
 
    /**
-    * @var string 
+    * @var string $pathLanguageFiles
     */
+   protected $pathLanguageFiles;
 
    /**
-    * @var CustomAutoloader $autoLoader
+    * @var string $pathLogFiles
     */
-   protected $autoLoader;
+   protected $pathLogFiles;
+
+ //  protected $autoLoader;
 
    /**
     * @var CustomRouteHandler $routeHandler
@@ -80,6 +89,10 @@ class StdApp
       return new StdApp();
    }
 
+   public static function loadAppBootstrap() : void {
+      require_once APP_ROOT_PATH .'bootstrap.php';
+   }
+
    /**
     * @return string
     */
@@ -88,10 +101,17 @@ class StdApp
    }
 
    /**
+    * @return bool
+    */
+   public static function isCLIMode() : bool {
+      return (php_sapi_name() == 'cli');
+   }
+
+   /**
     * @return string
     */
    public static function getDocumentRoot() : string {
-      if (php_sapi_name() == "cli") {
+      if (self::isCLIMode()) {
         // In CLI-mode
         return dirname(__FILE__);
      } else {
@@ -164,8 +184,11 @@ class StdApp
     */
     public function loadAppConfiguration() : void {
       $pathAppConfig = $this->getPath_appConfigPath();
+      $jsonConfigReader = JsonConfigReader::getInstance($this->getPath_appConfigPath(), 'app.conf.json');
       try {
         require_once($pathAppConfig .'app.conf.php');
+        // Load the JSON config-file.
+        $this->settings = $jsonConfigReader->load();
       } catch (Exception $e) {
         echo $e->getMessage();
         exit(2);
@@ -173,20 +196,33 @@ class StdApp
    }
 
    /**
-    * Registers the auto-loader that does the auto-loading functionality.
-    * @return void
+    * @return array
     */
+   public function getSettings() : array {
+      return $this->settings;
+   }
+
 /*
-   public function registerAutoloader() : void {
-      $this->autoLoader = CustomAutoloader::getInstance();
+   public static function getAutoloader() {
+      return ClassLoader::getRegisteredLoaders();
    }
 */
 
    /**
-    * @return CustomAutoloader
+    * Registers the auto-loader that does the auto-loading functionality.
+    * @return void
     */
 /*
-   public function getAttr_autoLoader() : CustomAutoloader {
+   public static function registerAutoloader() : void {
+      $this->autoLoader = new ClassLoader();
+     // $this->autoLoader = CustomAutoloader::getInstance();
+   }
+*/
+   /**
+    * @return ClassLoader
+    */
+/*
+   public function getAttr_autoLoader() : ClassLoader {
       return $this->autoLoader;
    }
 */
@@ -249,6 +285,7 @@ class StdApp
     */
    private function setupErrorHandler() : void {
       $this->errorHandler = CustomErrorHandler::getInstance();
+      // $this->errorHandler = CustomErrorHandler::getInstance($this);
    }
 
    /**
@@ -256,6 +293,8 @@ class StdApp
     */
    public function run() : void {
      $routeHandler = $this->getAttr_routeHandler();
+     // First check, if there is a match in the requested URL and the known pool of possible requests-URLs for the app.
+     // If there is a match then handle the request by using the routeHandler.
      try {
        // Let the route-handler handle the request.
        $routeHandler->handleRequest($this);

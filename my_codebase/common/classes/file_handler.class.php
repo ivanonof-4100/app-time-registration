@@ -288,6 +288,7 @@ class FileHandler
         return $this->getAttr_file_pointer();
       } catch (Exception $e) {
         echo $e->getMessage();
+        exit(2);
       }
    }
 
@@ -295,7 +296,22 @@ class FileHandler
     * Closes an open file-pointer.
     * @return bool
     */
-   public function closeFile() : bool {
+    public function closeFile() : bool {
       return fclose($this->getAttr_file_pointer());
+   }
+
+   /**
+    * Returns the contents of the file as a string.
+    *
+    * @param string $p_filename
+    * @return string
+    */
+   public function getFileContent(string $p_filename) : string {
+      try {
+         return file_get_contents($p_filename);
+      } catch (Exception $e) {
+         echo $e->getMessage();
+         exit(1);
+      }
    }
 } // End class

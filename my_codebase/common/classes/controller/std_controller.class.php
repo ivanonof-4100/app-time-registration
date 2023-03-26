@@ -41,13 +41,12 @@ class StdController
    * 
    * @return StdController
    */
-  public function __construct(string $p_lang =APP_LANGUAGE_IDENT, string $p_charset =APP_DEFAULT_CHARSET) {
-     $this->setInstance_codebaseRegistry(CodebaseRegistry::getInstance());
+  public function __construct(string $p_lang =APP_LANGUAGE_IDENT, string $p_charset =APP_DEFAULT_CHARSET, StdApp $p_appInstance) {
+     $codebaseRegistry = CodebaseRegistry::getInstance();
+     $codebaseRegistry->setInstance_appInstance($p_appInstance);
+     $this->setInstance_codebaseRegistry($codebaseRegistry);
      $this->setAttr_inputHandler(InputHandler::getInstance());
      $this->languageFileHandlerObj = LanguagefileHandler::getInstance(FALSE, $p_lang, $p_charset);
-
-     // Initialize dependencies and the registry of the web-app.
-     $this->initDependencies();
   }
 
   /**
@@ -285,13 +284,22 @@ class StdController
 //     $codebaseRegistry->setInstance_outputBuffer($outputBuffer);
 
      $codebaseRegistry = $this->getInstance_codebaseRegistry();
-
-     // Connect to the database if any
-     if (defined('SITE_HAS_DB') && (SITE_HAS_DB == TRUE)) {
-       // Initialize the database-connection, connect, if defined.
-       if (defined('DB_HOST') && defined('DB_NAME')) {
-         $this->initDatabaseConnection(TRUE);
+     $appInstance = $codebaseRegistry->getInstance_appInstance();
+     if ($appInstance instanceof StdApp) {
+       // Lets first get the config-settings of the application.
+       $arrSettings = $appInstance->getSettings();
+       if (is_array($arrSettings)) {
+         // Connect to the database, if any defined in the settings.
+         if (array_key_exists('db_connection', $arrSettings)) {
+           $this->initDatabaseConnection($arrSettings['db_connection'], TRUE);
+         }
+       } else {
+          trigger_error(__METHOD__ .': None settings was defined for the application ...', E_USER_ERROR);
        }
+       // and Connect to the database if any
+     } else {
+       trigger_error(__METHOD__ .': The appInstance was not an instance of the expected class ...', E_USER_ERROR);
+       exit(8);
      }
 
      // Start session
@@ -304,17 +312,16 @@ class StdController
   }
 
   /**
+   * @param array $p_arrSettings
    * @return void
    */
-  public function initDatabaseConnection($p_resetEntry =FALSE) : void {
+  public function initDatabaseConnection(array $p_arrSettings, $p_resetEntry =FALSE) : void {
   	 $codebaseRegistry = $this->getInstance_codebaseRegistry();
      if ((!$codebaseRegistry->doesEntryExists_dbConnection()) || ($p_resetEntry)) {
        try {
-         $mySQLDBAbstraction = MySQLDBAbstraction::getInstance(DB_HOST, DB_NAME, DB_CODEPAGE);
-
-         // Connecting to the database using PDO-abstraction.
-         $pdoDBConnectionObj = $mySQLDBAbstraction->initDatabaseConnection();
-
+         $mySQLDBAbstraction = MySQLDBAbstraction::getInstance($p_arrSettings['host'], $p_arrSettings['dbname'], $p_arrSettings['dbcodepage']);
+         // Connect to the database using PDO-abstraction.
+         $pdoDBConnectionObj = $mySQLDBAbstraction->initDatabaseConnection($p_arrSettings['dbuser'], $p_arrSettings['dbpassword']);
          // Set entry
          $codebaseRegistry->setInstance_dbConnection($mySQLDBAbstraction);
        } catch (Exception $e) {
@@ -339,7 +346,7 @@ class StdController
     }
   }
 
-  public function getAppInstance(){
+  public function getAppInstance() : StdApp {
     $codebaseRegistry = $this->getInstance_codebaseRegistry();
     if (($codebaseRegistry)) {
       try {
