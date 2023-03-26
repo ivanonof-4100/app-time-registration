@@ -90,8 +90,8 @@ class CodebaseRegistry
   /**
    * @return StdApp
    */
-  public function getInstance_appInstance() {
-     $this->getRegistryEntry('app_instance');
+  public function getInstance_appInstance() : StdApp {
+     return $this->getRegistryEntry('app_instance');
   }
 
   public function setInstance_errorHandler($p_errorHandlerObj) : void {
