@@ -11,5 +11,8 @@
             "my_codebase/common/classes/renderes",
             "my_codebase/common/library/smarty"
         ]
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.5"
     }
 }
