@@ -167,7 +167,7 @@ class CustomDateTime
     * @return DateTimeZone
     */
    public function getTimezone() : DateTimeZone {
-      return $this->timezone;
+      return $this->dateTimeZoneObj;
    }
 
    /**
@@ -247,11 +247,31 @@ class CustomDateTime
 
    /**
     * Sets the date of the current DataTime to the first day of the week.
+    * @param int $p_year
+    */
+   public function setDate_toYearStart(int $p_year =0) : void {
+      if ($p_year == 0) {
+         $p_year = $this->getYearNumber();
+      }
+
+      $this->dateTimeObj = $this->dateTimeObj->setDate($p_year, 1, 1);
+   }
+
+   public function setDate_toYearEnd(int $p_year =0) : void {
+      if ($p_year == 0) {
+         $p_year = $this->getYearNumber();
+      }
+
+      $this->dateTimeObj = $this->dateTimeObj->setDate($p_year, 12, 31);
+   }
+
+   /**
+    * Sets the date of the current DataTime to the first day of the week.
     *
     * @param int $p_year
     * @param int $p_weekNumber
     */
-   public function setDate_toWeekStart($p_year, $p_weekNumber) : void {
+   public function setDate_toWeekStart(int $p_year, int $p_weekNumber) : void {
       $this->dateTimeObj = $this->dateTimeObj->setISODate($p_year, $p_weekNumber, 1);
    }
 
@@ -424,7 +444,7 @@ class CustomDateTime
    public static function calcDateDiff($p_startDate, $p_endDate ='today') {
       $startDateObj = new CustomDateTime($p_startDate);
       $endDateObj = new CustomDateTime($p_endDate);
-      
+
       $startDate_dateTimeObj = $startDateObj->getInstance_dateTime();
       $endDate_dateTimeObj = $endDateObj->getInstance_dateTime();
       $diffDateIntervalObj = $startDate_dateTimeObj->diff($endDate_dateTimeObj);
