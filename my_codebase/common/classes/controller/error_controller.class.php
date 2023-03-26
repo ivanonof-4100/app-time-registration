@@ -19,15 +19,15 @@ use Common\Classes\StdApp;
  * Description:
  *  The error-controller.
  */
-class ErrorController extends StdController implements StdControllerInterface
+class ErrorController extends StdController
 {
   protected $errorRendererObj;
 
   /**
    * Constructor
    */
-  public function __construct(string $p_lang ='da', string $p_charset ='utf8') {
-     parent::__construct($p_lang, $p_charset);
+  public function __construct(string $p_lang ='da', string $p_charset ='utf8', StdApp $p_appInstance) {
+     parent::__construct($p_lang, $p_charset, $p_appInstance);
 
      $arrInputParam_print = $this->retriveInputParameter('print', 'boolean', '_GET');
      if ($arrInputParam_print['is_set'] && $arrInputParam_print['is_valid']) {
@@ -47,11 +47,12 @@ class ErrorController extends StdController implements StdControllerInterface
   /**
    * @param string $p_lang Default 'da'
    * @param string $p_charset Default 'utf8'
+   * @param StdApp $p_appInstance
    *
    * @return ErrorController
    */
-  public static function getInstance(string $p_lang ='da', string $p_charset ='utf8') : ErrorController {
-     return new ErrorController($p_lang, $p_charset);
+  public static function getInstance(string $p_lang ='da', string $p_charset ='utf8', StdApp $p_appInstance) : ErrorController {
+     return new ErrorController($p_lang, $p_charset, $p_appInstance);
   }
 
   public function getInstance_renderer() {

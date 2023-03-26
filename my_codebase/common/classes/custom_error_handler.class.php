@@ -133,6 +133,10 @@ class CustomErrorHandler
      return new CustomErrorHandler();
   }
 
+  public function getAppInstance() : StdApp {
+     return StdApp::getInstance();
+  }
+
   /**
    * @return string Returns 'display' or 'log'
   */
@@ -160,7 +164,7 @@ class CustomErrorHandler
   */
   public function exceptionErrorHandler(int $p_errNo, string $p_errStr, string $p_errFile, string $p_errLine) {
      throw new ErrorException($p_errStr, 0, $p_errNo, $p_errFile, $p_errLine);
-  } // method exceptionErrorHandler
+  }
 
   public function logOccuredError($p_errorMesg ='Unknown error', $p_errFile, $p_errLine) : void {
      // Log occured error
@@ -205,17 +209,17 @@ class CustomErrorHandler
   }
 
   protected function displayInternalError($p_arrLastError) : void {
-     $errorController = ErrorController::getInstance();
+     $errorController = ErrorController::getInstance(APP_LANGUAGE_IDENT, 'utf8', $this->getAppInstance());
      $errorController->displayErrorPage500($p_arrLastError);
   }
 
   protected function displayLastError($p_arrLastError) : void {
-     $errorController = ErrorController::getInstance();
+     $errorController = ErrorController::getInstance(APP_LANGUAGE_IDENT, 'utf8', $this->getAppInstance());
      $errorController->renderError($p_arrLastError);
   }
 
   public function displayErrorMessage(string $p_errorMessage ='') : void {
-     $errorController = ErrorController::getInstance();
+     $errorController = ErrorController::getInstance(APP_LANGUAGE_IDENT, 'utf8', $this->getAppInstance());
      $errorController->renderErrorMessage($p_errorMessage);
   }
 } // End class
