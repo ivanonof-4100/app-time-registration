@@ -23,15 +23,15 @@ DROP TABLE IF EXISTS `employee`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `employee` (
-  `employee_uuid` varchar(36) CHARACTER SET utf8mb3 COLLATE utf8mb3_danish_ci NOT NULL,
-  `person_first_name` varchar(50) COLLATE utf8mb3_danish_ci NOT NULL,
-  `person_middle_name` varchar(50) COLLATE utf8mb3_danish_ci NOT NULL,
-  `person_last_name` varchar(50) COLLATE utf8mb3_danish_ci NOT NULL,
+  `employee_uuid` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `person_first_name` varchar(50) COLLATE utf8mb4_danish_ci NOT NULL,
+  `person_middle_name` varchar(50) COLLATE utf8mb4_danish_ci NOT NULL,
+  `person_last_name` varchar(50) COLLATE utf8mb4_danish_ci NOT NULL,
+  `person_gender` varchar(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_danish_ci NOT NULL,
   `person_birthday` date NOT NULL,
-  `person_native_language` varchar(2) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL DEFAULT 'en',
-  `person_gender` varchar(1) CHARACTER SET utf8mb3 COLLATE utf8mb3_danish_ci NOT NULL,
+  `person_native_language` varchar(2) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'en',
   PRIMARY KEY (`employee_uuid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_danish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_danish_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -69,18 +69,18 @@ DROP TABLE IF EXISTS `timesheet`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `timesheet` (
-  `timesheet_uuid` varchar(36) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL DEFAULT 'UUID()',
-  `employee_uuid` varchar(36) CHARACTER SET utf8mb3 COLLATE utf8mb3_danish_ci NOT NULL,
-  `contract_uuid` varchar(36) CHARACTER SET utf8mb3 COLLATE utf8mb3_danish_ci DEFAULT NULL,
+  `timesheet_uuid` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'UUID()',
+  `employee_uuid` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `contract_uuid` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `timesheet_work_date` date NOT NULL,
   `timesheet_hours_regular` float NOT NULL,
   `timesheet_hours_overtime` float NOT NULL,
   `timesheet_hours_break` float NOT NULL,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`timesheet_uuid`),
-  KEY `timesheet_employee_fk` (`employee_uuid`),
-  CONSTRAINT `timesheet_employee_fk` FOREIGN KEY (`employee_uuid`) REFERENCES `employee` (`employee_uuid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_danish_ci;
+  KEY `fk_timesheet_employee` (`employee_uuid`),
+  CONSTRAINT `fk_timesheet_employee` FOREIGN KEY (`employee_uuid`) REFERENCES `employee` (`employee_uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
