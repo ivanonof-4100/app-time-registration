@@ -2,7 +2,9 @@
 namespace Common\Classes\Renderes;
 
 use Common\Classes\LanguagefileHandler;
+use Common\Classes\OutputBuffer;
 use Common\Classes\Renderes\Template;
+// use Common\Classes\Model\Menu;
 
 /**
  * Script-name  : std_renderer.class.php
@@ -21,12 +23,14 @@ class StdRenderer
    /**
     * @var LanguagefileHandler
     */
-   protected $languageFileHandlerObj;
+   protected $languageFileHandler;
 
    /**
     * @var bool
     */
    protected $isPrintPage;
+
+   protected $outputBuffer;
 
   /**
    * Default constructor.
@@ -35,7 +39,7 @@ class StdRenderer
    * @param bool $p_isPrintPage Default FALSE.
    */
   public function __construct($p_languageFileHandler, bool $p_isPrintPage =false) {
-     $this->languageFileHandlerObj = $p_languageFileHandler;
+     $this->languageFileHandler = $p_languageFileHandler;
      $this->setAttr_isPrintPage($p_isPrintPage);
   }
 
@@ -62,13 +66,27 @@ class StdRenderer
    * @return LanguagefileHandler
    */
   public function getInstance_languageFileHandler() : LanguagefileHandler {
-     return $this->languageFileHandlerObj;
+     return $this->languageFileHandler;
+  }
+
+  public function startOutputBuffering() : void {
+      // Start using buffered-output.
+      $this->outputBuffer = OutputBuffer::getInstance(FALSE, 'UTF-8', 'UTF-8');
+      $this->outputBuffer->startOutputBuffering();
+  }
+
+  public function stopOutputBuffering() : void {
+      if (is_object($this->outputBuffer) && $this->outputBuffer instanceof OutputBuffer) {
+        $this->outputBuffer->stopOutputBuffering();
+      } else {
+        trigger_error(__METHOD__ .': outputBuffer was not an instance of OutputBuffer ...', E_USER_ERROR);
+      }
   }
 
   /**
    * @return string
    */
-  public static function getDomainTitle($p_pageTitle ='') {
+  public static function getDomainTitle($p_pageTitle ='') : string {
      return sprintf(APP_DOMAIN_TITLE, $p_pageTitle);
   }
 
@@ -94,17 +112,22 @@ class StdRenderer
   /**
    * Wraps everything in a nice HTML5 page.
    * @param string $p_pageTitle
+   * @param string $p_pageMetaDescription Default blank.
+   * @param string $p_pageMetaKeywords Default blank.
    * @param string $p_mainContent Default blank.
    * @param string $p_sidebarContent Default blank.
    * 
    * @return void
    */
   public function displayAsPage(string $p_pageTitle,
+                                string $p_pageMetaDescription ='',
+                                string $p_pageMetaKeywords ='',
                                 string $p_mainContent ='',
                                 string $p_sidebarContent =''
                                ) : void {
     // Get the language-file handler.
     $languagefileHandler = $this->getInstance_languageFileHandler();
+    // $menu = Menu::retriveMenuData_byTagName()
 
     $template = Template::getInstance('std_page_html5.tpl');
 
@@ -112,11 +135,14 @@ class StdRenderer
     $template->assign('pageLangIdent', $languagefileHandler->getLanguageIdent());
     $template->assign('pageTitle', $p_pageTitle);
     $template->assign('pageDomainTitle', self::getDomainTitle($p_pageTitle));
+    $template->assign('pageMetaDescription', $p_pageMetaDescription);
+    $template->assign('pageMetaKeywords', $p_pageMetaKeywords);
     $template->assign('mainContent', $p_mainContent);
     $template->assign('sidebarContent', $p_sidebarContent);
 
     // Send HTTP response-header and display the page.
     $this->sendResponseHeaders();
     $template->display();
+    $this->stopOutputBuffering();
   }
 } // End class

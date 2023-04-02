@@ -278,11 +278,6 @@ class StdController
   }
 
   public function initDependencies() : void {
-     // Start using buffered-output.
-//     $outputBuffer = OutputBuffer::getInstance(FALSE, 'UTF-8', 'UTF-8');
-//     $outputBuffer->startOutputBuffering();
-//     $codebaseRegistry->setInstance_outputBuffer($outputBuffer);
-
      $codebaseRegistry = $this->getInstance_codebaseRegistry();
      $appInstance = $codebaseRegistry->getInstance_appInstance();
      if ($appInstance instanceof StdApp) {
@@ -296,7 +291,6 @@ class StdController
        } else {
           trigger_error(__METHOD__ .': None settings was defined for the application ...', E_USER_ERROR);
        }
-       // and Connect to the database if any
      } else {
        trigger_error(__METHOD__ .': The appInstance was not an instance of the expected class ...', E_USER_ERROR);
        exit(8);

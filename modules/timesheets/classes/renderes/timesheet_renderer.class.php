@@ -7,6 +7,7 @@ use Common\Classes\LanguagefileHandler;
 use Common\Classes\Datetime\CustomDateTime;
 use Common\Classes\Db\DBAbstraction;
 use App\Modules\Timesheets\Classes\Model\Timesheet;
+use DateTime;
 
 class TimesheetRenderer extends StdRenderer {
 
@@ -19,7 +20,9 @@ class TimesheetRenderer extends StdRenderer {
     }
 
     public static function getInstance(LanguagefileHandler $p_languagefileHandler, bool $p_isPrintPage =FALSE) : TimesheetRenderer {
-        return new TimesheetRenderer($p_languagefileHandler, $p_isPrintPage);
+        $timesheetRenderer = new TimesheetRenderer($p_languagefileHandler, $p_isPrintPage);
+        $timesheetRenderer->startOutputBuffering();
+        return $timesheetRenderer;
     }
 
     /**
@@ -50,6 +53,16 @@ class TimesheetRenderer extends StdRenderer {
         $languagefileHandler = $this->getInstance_languageFileHandler();
         $languagefileHandler->loadLanguageFile('custom_datetime');
 
+        // Set year start and end-dates.
+        $yearCustomDateTime = CustomDateTime::getInstance();
+
+        $yearStartDate = new DateTime();
+        $yearStartDate->setDate($yearCustomDateTime->getYearNumber(), 1, 1);
+        $yearEndDate = new DateTime();
+        $yearEndDate->setDate($yearCustomDateTime->getYearNumber(), 12, 31);
+        
+//        echo sprintf("%s - %s", $yearStartDate->format(CustomDateTime::getISODateFormat()), $yearEndDate->format(CustomDateTime::getISODateFormat()));
+
         if (($p_weekNumber != 0) && ($p_weekNumber >=1 && $p_weekNumber <=53)) {
           // @TODO validate that its valid for the year.
           $customDateTime = CustomDateTime::getInstance();
@@ -79,13 +92,26 @@ class TimesheetRenderer extends StdRenderer {
                                                                       $datetimeWeekDateEnd->format(CustomDateTime::getISODateFormat()));
         if (empty($arrRegisteredData)) {
           // There are not any data for the period yet - set default.
-          $arrAccumulatedHours[] = ['total_hours_regular' => (float) 0, 'total_hours_overtime' => (float) 0, 'total_hours_break' => (float) 0];
+          $arrAccumulatedHours_week[] = ['total_hours_regular' => (float) 0, 'total_hours_overtime' => (float) 0, 'total_hours_break' => (float) 0];
         } else {
           // Retrive the accumulated hours for the period from the database.
-          $arrAccumulatedHours = Timesheet::retriveAccumulatedHours($p_dbAbstraction,
+          $arrAccumulatedHours_week = Timesheet::retriveAccumulatedHours($p_dbAbstraction,
                                                                     $p_employeeUUID,
                                                                     $datetimeWeekDateStart->format(CustomDateTime::getISODateFormat()),
                                                                     $datetimeWeekDateEnd->format(CustomDateTime::getISODateFormat()));
+        }
+
+        // Retrive the accumulated annualy hours
+        // echo sprintf("%s - %s", $yearStartDate->format(CustomDateTime::getISODateFormat()), $yearEndDate->format(CustomDateTime::getISODateFormat()));
+        $arrAccumulatedHours_annualy = Timesheet::retriveAccumulatedHours($p_dbAbstraction,
+                                                                          $p_employeeUUID,
+                                                                          /* '2022-01-01' */ $yearStartDate->format(CustomDateTime::getISODateFormat()),
+                                                                          /* '2022-12-31' */ $yearEndDate->format(CustomDateTime::getISODateFormat())
+                                                                         );
+        if (empty($arrAccumulatedHours_annualy)) {
+          $arrAccumulatedHours_annualy[] = array('total_hours_regular' => 0.0,
+                                               'total_hours_overtime' => 0.0,
+                                               'total_hours_break' => 0.0);
         }
 
         // Week-days
@@ -131,8 +157,10 @@ class TimesheetRenderer extends StdRenderer {
         $template->assign('weekDateStart', $datetimeWeekDateStart->format('d-m-Y'));
         $template->assign('weekDateEnd', $datetimeWeekDateEnd->format('d-m-Y'));
         $template->assign('arrWeekdays', $arrWeekdays);
-        $template->assign('arrAccumulatedHours', $arrAccumulatedHours[0]);
-        $template->assign('totalHours', array_sum($arrAccumulatedHours[0]));
+        $template->assign('arrAccumulatedHours_week', $arrAccumulatedHours_week[0]);
+        $template->assign('totalHours_week', array_sum($arrAccumulatedHours_week[0]));
+        $template->assign('arrAccumulatedHours_annualy', $arrAccumulatedHours_annualy[0]);
+        $template->assign('totalHours_annualy', array_sum($arrAccumulatedHours_annualy[0]));
         $template->assign('arrOptions_weeks', $arrOptions_weeks);
 
         // We also need to pass employee_uuid
@@ -141,6 +169,8 @@ class TimesheetRenderer extends StdRenderer {
         $timesheetOuput = $template->fetch();
 
         // Display
-        $this->displayAsPage($pageTitle, $timesheetOuput);
+        $pageMetaDescription = 'Weekly Timesheet administration';
+        $pageMetaKeywords = 'Timesheets, Weekly, Your used time, Administation';
+        $this->displayAsPage($pageTitle, $pageMetaDescription, $pageMetaKeywords, $timesheetOuput);
     }
 }

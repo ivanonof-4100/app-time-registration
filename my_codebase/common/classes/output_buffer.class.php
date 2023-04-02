@@ -89,6 +89,7 @@ class OutputBuffer
      if ($bufferLength >=1) {
        $this->clean();
      }
+     // ob_end_flush();
   }
 
   public function __toString() : string {   
@@ -247,21 +248,19 @@ class OutputBuffer
   }
 
   /**
+   * Get current contents of the output-buffer.
+   * @return string|bool If output-buffering isn't active then FALSE is returned.
+   */
+  public function fetchContents() {
+    return ob_get_contents();
+  }
+
+  /**
    * Flushes or sends the content of the output-buffer and turn off output-buffering. 
    * @return void
    */
   public function flush() : void {
   	 ob_flush(); // Flush (send) the output-buffer and turn off output-buffering.
-  	 flush(); // Keeps the output flowing to the web-browser.
-  	 ob_end_flush();
-  }
-
-  /**
-   * Get current contents of the output-buffer.
-   * @return string|bool If output-buffering isn't active then FALSE is returned.
-   */
-  public function fetchContents() {
-     return ob_get_contents();
   }
 
   /**
