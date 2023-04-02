@@ -93,7 +93,7 @@ class DBAbstraction
         // Log occured error
         $customDateTimeObj = CustomDateTime::getInstance();
         $logEntry = sprintf('%s, Error: %s'. PHP_EOL, $customDateTimeObj->getFormatedDatetime(), $p_errorMesg);
-        $logFile = APP_LOG_PATH .sprintf('%s-%s-%s.log', 'errors.pdo-mysql', DB_HOST, DB_NAME);
+        $logFile = APP_LOG_PATH .sprintf('%s.log', 'errors.pdo-mysql');
         $fileHandler = FileHandler::getInstance();
         $fileHandler->appendToFile($logFile, $logEntry);
     }

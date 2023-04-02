@@ -23,12 +23,10 @@ use Common\Classes\Db\DBAbstraction;
  *  URL: http://www.php.net/manual/en/book.pdo.php
  *
  *  @example:
- * 
  *  // Get PDO-database-connection.
- *  $mySQLDBAbstractionObj = MySQLDBAbstraction::getInstance(DB_HOST, DB_NAME, DB_CODEPAGE);
- *  $dbPDOConnection = $mySQLDBAbstractionObj->initDatabaseConnection();
+ *  $mySQLDBAbstractionObj = MySQLDBAbstraction::getInstance('localhost', 'dbname', 'utf8mb4');
+ *  $dbPDOConnection = $mySQLDBAbstractionObj->initDatabaseConnection('dbUser', 'dbPass');
  */
-
 class MySQLDBAbstraction extends DBAbstraction
 {
    const PORT_MYSQL = 3306;
