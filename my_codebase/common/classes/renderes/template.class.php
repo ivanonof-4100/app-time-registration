@@ -84,8 +84,8 @@ class Template
       $this->SmartyObj->force_compile = TRUE;
  
       // Set debugging-state.
-      if (defined('DEBUG')) {
-        $this->setDebuggingState(DEBUG);
+      if (defined('APP_DEBUG_MODE')) {
+        $this->setDebuggingState(APP_DEBUG_MODE);
       } else {
         $this->setDebuggingState(FALSE);  
       }
