@@ -7,20 +7,22 @@ use TypeError;
 
 /**
  * Script-name  : template.class.php
- * Language     : PHP v5+, 7.2
+ * Language     : PHP v7.4+
  * Date created : 26/07-2012, Ivan
- * Last modified: 03/08-2016, Ivan
+ * Last modified: 12/04-2023, Ivan
  * Developers   : @author Ivan Mark Andersen <ivanonof@gmail.com>
  *
- * @copyright Copyright (C) 2016 by Ivan Mark Andersen
+ * @copyright Copyright (C) 2023 by Ivan Mark Andersen
  *
- * Description
+ * Description:
  *  This class wraps and implements a large subset and maybe in the future all Smarty-template features
  *  in a unique and smart template-handling class using the Smarty-standard.
- * 
- *  NOTE: This class is tested and known to work with Smarty-template-engine version 3.1.35.
- *  For more information about Smarty-templates take a look at the documentation on https://www.smarty.net
+ *
+ *  @see https://www.smarty.net
 */
+// Exceptions related to this class.
+class TemplateNotFoundException extends Exception {}
+
 class Template
 {
    const DEFAULT_CACHE_LIFETIME = 3600;
@@ -32,20 +34,20 @@ class Template
     * Default constructor.
     *
     * @param string $p_templateFilename Default blank.
-    * @param string|boolean $p_customTemplateDirectory Default FALSE.
+    * @param string $p_customTemplateDirectory Default blank.
     *
     * @return Template
     */
-   public function __construct($p_templateFilename ='', $p_customTemplateDir =false) {
+   public function __construct(string $p_templateFilename ='', string $p_customTemplateDir ='') {
       // Setup the Smarty instance.
-      if ($p_customTemplateDir) {
+      if (!empty($p_customTemplateDir)) {
         $this->setupSmarty($p_customTemplateDir);
       } else {
         $this->setupSmarty();
       }
 
       // Set the name of the SmartyTemplate.
-      $this->setFilename($p_templateFilename, $p_customTemplateDir);
+      $this->setFilename($p_templateFilename);
    }
 
    /**
@@ -55,9 +57,11 @@ class Template
    }
 
    /**
+    * @param string $p_templateFilename
+    * @param string $p_customTemplateDir
     * @return Template
     */
-   public static function getInstance($p_templateFilename, $p_customTemplateDir =FALSE) : Template {
+   public static function getInstance(string $p_templateFilename, string $p_customTemplateDir ='') : Template {
       return new Template($p_templateFilename, $p_customTemplateDir);
    }
 
@@ -65,8 +69,8 @@ class Template
     * Sets up the Smarty-instance of the Template-instance.
     * @param string $p_customTemplateDir
     */
-   protected function setupSmarty($p_customTemplateDir =PATH_TEMPLATES_DOMAIN) {
-      // Initialize the instance of Smarty.
+   protected function setupSmarty(string $p_customTemplateDir =PATH_TEMPLATES_DOMAIN) {
+      // Initialize the Smarty-instance.
       $this->SmartyObj = new Smarty();
 
       // Register the plugin-handler.
@@ -77,7 +81,7 @@ class Template
       $this->SmartyObj->setCompileDir(realpath($p_customTemplateDir .'templates_c'));
       $this->SmartyObj->setCacheDir(realpath($p_customTemplateDir .'cache'));
       $this->SmartyObj->setConfigDir(realpath($p_customTemplateDir .'config'));
-      $this->SmartyObj->force_compile = true;
+      $this->SmartyObj->force_compile = TRUE;
  
       // Set debugging-state.
       if (defined('DEBUG')) {
@@ -160,21 +164,15 @@ class Template
     * @return string
     */
    public function getCurrentTemplatePath() {
-      return $this->SmartyObj->getTemplateDir();
+      $templateDirectoryPath = $this->SmartyObj->getTemplateDir();
+      return $templateDirectoryPath[0];
    }
 
    /**
     * Sets the filename of the template to use.
-    * 
     * @param string $p_templateFilename
-    * @param string|boolean $p_customTemplateDirectory Default FALSE.
     */
-   public function setFilename($p_templateFilename, $p_customTemplateDirectory =false) {
-      // Setup the Smarty-instance with custom template-directory.
-      if ($p_customTemplateDirectory) {
-        $this->setupSmarty($p_customTemplateDirectory);
-      }
-
+   public function setFilename(string $p_templateFilename) {
       // Set the filename of the Smarty-template.
       $this->templateFilename = (string) $p_templateFilename;
    }
@@ -206,47 +204,46 @@ class Template
     * @param string $p_templateVarName Name of the template variable.
     * @param any $p_templateVarValue The value to set the template-variable.
     */
-   public function assign($p_templateVarName, $p_templateVarValue) {
+   public function assign(string $p_templateVarName, $p_templateVarValue) {
       $this->SmartyObj->assign($p_templateVarName, $p_templateVarValue);
    }
 
    /**
     * Fetches the output of any given template.
+    * @throws TemplateNotFoundException
+    * @throws Exception
     * @return string Returns the resulting output of template.
     */
    public function fetch() : string {
-      if ($this->doesTemplateExists()) {
+      if (!$this->doesTemplateExists()) {
+        throw new TemplateNotFoundException(sprintf('Smarty-template: <strong>%s</strong> was NOT found in the given file-path <strong>%s</strong>', $this->getFilename(), $this->getCurrentTemplatePath()));
+      } else {
         try {
           // Return output of given template.
           return $this->SmartyObj->fetch($this->getFilename());
         } catch (Exception $e) {
-          echo "Error: " . $e->getMessage(); 
+          // Re-throw Exception
+          throw new Exception(sprintf('Smarty error: <strong>%s</strong>', $e->getMessage()));
         }
-      } else {
-        $templateFilename = $this->getFilename();
-        trigger_error(__METHOD__ .': Smarty-template ('. $templateFilename .') was NOT found in the file-system of the web-server - path was ('. $this->getCurrentTemplatePath() .') ...', E_USER_ERROR);
-
-        // Return blank result of template. 
-        return '';
       }
    }
 
    /**
     * Displays the output of any given template.
+    * @throws TemplateNotFoundException
+    * @return void
     */
    public function display() : void {
-      if ($this->doesTemplateExists()) {
-        // Display the output of the template to use.
-        try {
-          $this->SmartyObj->display($this->getFilename());
-        } catch (TypeError $e){
-          echo $e->getMessage();
-        }   
+      if (!$this->doesTemplateExists()) {
+        throw new TemplateNotFoundException(sprintf('Smarty-template: <strong>%s</strong> was NOT found in the given file-path <strong>%s</strong>', $this->getFilename(), $this->getCurrentTemplatePath()));
       } else {
-        trigger_error(__METHOD__ .': Smarty-template ('. $this->getFilename() .') was NOT found in the file-system of the web-server - path was ('. $this->getCurrentTemplatePath() .') ...', E_USER_ERROR);
-
-        // Display blank result of template. 
-        echo '';
+        try {
+          // Display the output of the template to use.
+          $this->SmartyObj->display($this->getFilename());
+        } catch (TypeError $e) {
+          // Re-throw Exception
+          throw new Exception(sprintf('Smarty error: <strong>%s</strong>', $e->getMessage()));
+        }
       }
    }
 
@@ -256,7 +253,7 @@ class Template
     * @param int $p_cacheLifetimeSecs Default is 3600 seconds which is one hour.
     * @return void
     */
-   public function turnOnCaching($p_cacheLifetimeSecs =3600) : void {
+   public function turnOnCaching($p_cacheLifetimeSecs =self::DEFAULT_CACHE_LIFETIME) : void {
       $this->SmartyObj->caching = Smarty::CACHING_LIFETIME_CURRENT;
       /* The cache_lifetime is the length of time in seconds that a template cache is valid.
        * Once this time has expired, the cache will be regenerated.
@@ -282,9 +279,9 @@ class Template
 
    /**
     * Clears only the cache-files that has expired.
-    * @param int $p_expiredSinceSecAgo The number of seconds since it expired Default is 3600 equal to one hour and more.
+    * @param int $p_expiredSinceSecAgo The number of seconds since it expired Default is 3600 equal to one hour.
     */
-   public function clearExpiredCache($p_expiredSinceSecAgo =3600) : void {
+   public function clearExpiredCache(int $p_expiredSinceSecAgo =self::DEFAULT_CACHE_LIFETIME) : void {
       $this->SmartyObj->clearAllCache($p_expiredSinceSecAgo);
    }
 } // End class
