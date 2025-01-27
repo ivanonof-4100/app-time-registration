@@ -1,10 +1,10 @@
 <?php
 namespace Common\Classes;
 
-use Common\Classes\CustomRouteHandler;
 use Common\Classes\CustomErrorHandler;
 use Common\Classes\CustomString;
 use Common\Classes\JsonConfigReader;
+use Common\Classes\RouteHandler;
 use Exception;
 
 /**
@@ -13,17 +13,14 @@ use Exception;
  * Date created : 27/12-2020, Ivan
  * Last modified: 27/09-2022, Ivan
  * Developers   : @author Ivan Mark Andersen <ivanonof@gmail.com>
- * @copyright   : Copyright (C) 2023, 2022 by Ivan Mark Andersen
+ * @copyright   : Copyright (C) 2023 by Ivan Mark Andersen
  *
  * Description:
- *  My standard app class.
+ * My standard app class.
  */
 class StdApp
 {
-   const PATH_DELIMITER = '/';
-
    // Attributes
-
    /**
     * @var array $settings
     */
@@ -49,17 +46,15 @@ class StdApp
     */
    protected $pathLogFiles;
 
- //  protected $autoLoader;
-
-   /**
-    * @var CustomRouteHandler $routeHandler
-    */
-   protected $routeHandler;
-
    /**
     * @var CustomErrorHandler
     */
    protected $errorHandler;
+
+   /**
+    * @var string $languageIdent
+    */
+   protected $languageIdent;
 
    public function __construct() {
       // Setup dynamic path-configurations.
@@ -70,16 +65,15 @@ class StdApp
 
       // Load configuration-file of the app.
       $this->loadAppConfiguration();
+      // Sets only the default language in case the web-app dont succeed.
+      $this->setLanguageIdent(APP_LANGUAGE_IDENT);
 
       // Setup error-handling.
       $this->setupErrorReporting();
       $this->setupErrorHandler();
-      $this->registerRouteHandler();
    }
 
    public function __destruct() {
-      // $this->autoLoader->__destruct();
-      $this->routeHandler->__destruct();
    }
 
    /**
@@ -89,15 +83,23 @@ class StdApp
       return new StdApp();
    }
 
+   /**
+    * Load the bootstrap-file of the application.
+    */
    public static function loadAppBootstrap() : void {
-      require_once APP_ROOT_PATH .'bootstrap.php';
+      try {
+         require_once APP_ROOT_PATH .'bootstrap.php';
+      } catch (Exception $e) {
+         trigger_error($e->getMessage(), E_USER_ERROR);
+         exit(2);
+      }
    }
 
    /**
     * @return string
     */
    public static function getPathDelimiter() : string {
-      return self::PATH_DELIMITER;
+      return DIRECTORY_SEPARATOR;
    }
 
    /**
@@ -123,11 +125,11 @@ class StdApp
    public function setPath_appRoot() : void {
       $strPath_appRoot = CustomString::getInstance(self::getDocumentRoot(), 'UTF-8');
       // The app-directory is the one that has app in it like app-name or just app
-      $searchStr = self::PATH_DELIMITER .'app';
+      $searchStr = DIRECTORY_SEPARATOR .'app';
       $posFirstOccurrence = $strPath_appRoot->getPosition_firstOccurrence($searchStr);
 
       // Then find the next directory-delimitor
-      $posTruncate = $strPath_appRoot->getPosition_firstOccurrence(self::PATH_DELIMITER, $posFirstOccurrence+1);
+      $posTruncate = $strPath_appRoot->getPosition_firstOccurrence(DIRECTORY_SEPARATOR, $posFirstOccurrence+1);
       $this->pathAppRoot = $strPath_appRoot->getSubString_truncatedAtLength($posTruncate+1);
    }
 
@@ -143,13 +145,13 @@ class StdApp
     */
    public function getPath_appConfigPath() : string {
       $pathAppRoot = $this->getPath_appRoot();
-      $appPathConfig = $pathAppRoot .'config'.self::PATH_DELIMITER;
+      $appPathConfig = $pathAppRoot .'config'. DIRECTORY_SEPARATOR;
       return $appPathConfig;
    }
 
    public function setPath_codebaseRoot() : void {
       $pathAppRoot = $this->getPath_appRoot();
-      $this->pathCodebaseRoot = $pathAppRoot. self::PATH_DELIMITER .'my_codebase'. self::PATH_DELIMITER;
+      $this->pathCodebaseRoot = $pathAppRoot. DIRECTORY_SEPARATOR .'my_codebase'. DIRECTORY_SEPARATOR;
    }
 
    public function getPath_codebaseRoot() : string {
@@ -158,7 +160,7 @@ class StdApp
 
    public function setPath_languageFiles() : void {
       $pathCodebaseRoot = $this->getPath_codebaseRoot();
-      $this->pathLanguageFiles = $pathCodebaseRoot. self::PATH_DELIMITER .'language'. self::PATH_DELIMITER;
+      $this->pathLanguageFiles = $pathCodebaseRoot. DIRECTORY_SEPARATOR .'language'. DIRECTORY_SEPARATOR;
    }
 
    public function getPath_languageFiles() : string {
@@ -167,7 +169,7 @@ class StdApp
 
    public function setPath_logFiles() : void {
       $pathAppRoot = $this->getPath_appRoot();
-      $this->pathLogFiles = $pathAppRoot .'log'. self::PATH_DELIMITER;
+      $this->pathLogFiles = $pathAppRoot .'log'. DIRECTORY_SEPARATOR;
    }
 
    /**
@@ -179,18 +181,33 @@ class StdApp
    }
 
    /**
+    * @param string $p_langIdent
+    */
+   public function setLanguageIdent(string $p_langIdent =APP_LANGUAGE_IDENT) : void {
+      $this->languageIdent = $p_langIdent;
+   }
+
+   /**
+    * @return string
+    */
+   public function getLanguageIdent() : string {
+      return $this->languageIdent;
+   }
+
+   /**
     * Load common settings of the application-setup in config-files for the app.
     * @return void
     */
     public function loadAppConfiguration() : void {
       $pathAppConfig = $this->getPath_appConfigPath();
-      $jsonConfigReader = JsonConfigReader::getInstance($this->getPath_appConfigPath(), 'app.conf.json');
+      $jsonConfigReader = JsonConfigReader::getInstance($pathAppConfig, 'app.conf.json');
       try {
         require_once($pathAppConfig .'app.conf.php');
         // Load the JSON config-file.
         $this->settings = $jsonConfigReader->load();
       } catch (Exception $e) {
-        echo $e->getMessage();
+        // Re-throw Exception
+        throw new Exception($e->getMessage(), $e->getCode());
         exit(2);
       }
    }
@@ -202,37 +219,23 @@ class StdApp
       return $this->settings;
    }
 
-/*
-   public static function getAutoloader() {
-      return ClassLoader::getRegisteredLoaders();
-   }
-*/
-
    /**
-    * Registers the auto-loader that does the auto-loading functionality.
-    * @return void
+    * Checks if a given language-ident is supported. 
+    * @param string $p_requestedLanguageIdent
+    * @return bool
     */
-/*
-   public static function registerAutoloader() : void {
-      $this->autoLoader = new ClassLoader();
-     // $this->autoLoader = CustomAutoloader::getInstance();
-   }
-*/
-   /**
-    * @return ClassLoader
-    */
-/*
-   public function getAttr_autoLoader() : ClassLoader {
-      return $this->autoLoader;
-   }
-*/
-
-   public function registerRouteHandler() {
-      $this->routeHandler = CustomRouteHandler::getInstance();
-   }
-
-   public function getAttr_routeHandler() : CustomRouteHandler {
-      return $this->routeHandler;
+   public function isSupported_requestedLanguageIdent(string $p_requestedLanguageIdent) : bool {
+      $settings = $this->getSettings();
+      if (!isset($settings['app_lang_supported'])) {
+         return FALSE;
+      } else {
+         $entryLangIdentRequested = sprintf('lang_%s', mb_strtolower($p_requestedLanguageIdent, 'UTF-8'));
+         if (is_array($settings['app_lang_supported'])) {
+            return array_key_exists($entryLangIdentRequested, $settings['app_lang_supported']);
+         } else {
+            return FALSE;
+         }
+      }
    }
 
    /**
@@ -265,9 +268,9 @@ class StdApp
        self::setPHPConfigParameter('display_errors', '1');
        self::setPHPConfigParameter('log_errors', '0');
        // Set which errors are reported.
-       self::setPHPConfigParameter('error_reporting', E_ALL | E_STRICT | E_WARNING | E_PARSE | E_NOTICE);
-       // error_reporting(E_ALL | E_STRICT | E_WARNING | E_PARSE | E_NOTICE);
-       // Development Value:  error_reporting(E_ERROR | E_WARNING | E_PARSE);
+       // self::setPHPConfigParameter('error_reporting', E_ALL | E_STRICT | E_WARNING | E_PARSE | E_NOTICE);
+       // Development setting
+       self::setPHPConfigParameter('error_reporting', E_ERROR | E_WARNING| E_PARSE);
      } else {
        // Not in debug-mode
        self::setPHPConfigParameter('display_startup_errors','1');
@@ -283,23 +286,16 @@ class StdApp
    /*
     * @return void
     */
-   private function setupErrorHandler() : void {
+   protected function setupErrorHandler() : void {
       $this->errorHandler = CustomErrorHandler::getInstance();
-      // $this->errorHandler = CustomErrorHandler::getInstance($this);
    }
 
    /**
+    * Run method that uses the new generic route-handler to handle every request.
     * @return void
     */
    public function run() : void {
-     $routeHandler = $this->getAttr_routeHandler();
-     // First check, if there is a match in the requested URL and the known pool of possible requests-URLs for the app.
-     // If there is a match then handle the request by using the routeHandler.
-     try {
-       // Let the route-handler handle the request.
-       $routeHandler->handleRequest($this);
-     } catch (Exception $e) {
-       trigger_error(sprintf('An error occurred: %s', $e->getMessage()), E_USER_ERROR);
-     }
+      $routeHandler = RouteHandler::getInstance(APP_ROUTES_PATH);
+      $routeHandler->dispatch($this);
    }
 }

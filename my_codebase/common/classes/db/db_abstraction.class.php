@@ -9,163 +9,212 @@ use PDOStatement;
 
 class DBAbstraction
 {
-    // Attributes
-    /**
-     * @var string
-     */
-    protected $dbHost;
-    /**
-     * @var string
-     */
-    protected $dbName;
-    /**
-     * @var string
-     */
-    protected $dbCodepage;
+  // Attributes
+  /**
+   * @var string
+   */
+  protected $dbHost;
 
-    /**
-     * @var PDO
-     */
-    protected $dbConnection = null;
+  /**
+   * @var string
+   */
+  protected $dbName;
 
-    /**
-     * Default constructor
-     */
-    public function __construct() {
-    }
+  /**
+   * @var string
+   */
+  protected $dbCodepage;
 
-    public function __destruct() {
-    }
+  /**
+   * @var PDO
+   */
+  protected $dbConnection;
 
-    protected function __clone() {
-        trigger_error('It is NOT allowed to clone the instance handling the database-connection ...', E_USER_ERROR);
-    }
+  /**
+   * Default constructor
+   */
+  public function __construct() {
+  }
 
-    /**
-     * @param string $p_dbHost
-     * @return void
-     */
-    protected function setAttr_dbHost(string $p_dbHost) : void {
-        $this->dbHost = (string) $p_dbHost;
-    }
+  public function __destruct() {
+  }
+
+  protected function __clone() {
+    trigger_error('It is NOT allowed to clone the instance handling the database-connection ...', E_USER_ERROR);
+  }
+
+  /**
+   * @param string $p_dbHost
+   * @return void
+   */
+  protected function setAttr_dbHost(string $p_dbHost) : void {
+    $this->dbHost = (string) $p_dbHost;
+  }
     
-    /**
-     * @return string
-     */
-    protected function getAttr_dbHost() : string {
-        return $this->dbHost;
-    }
+  /**
+   * @return string
+   */
+  protected function getAttr_dbHost() : string {
+    return $this->dbHost;
+  }
     
-    /**
-     * @param string $p_dbName
-     */
-    protected function setAttr_dbName(string $p_dbName) : void {
-        $this->dbName = (string) $p_dbName;
-    }
+  /**
+   * @param string $p_dbName
+   */
+  protected function setAttr_dbName(string $p_dbName) : void {
+    $this->dbName = (string) $p_dbName;
+  }
 
-    /**
-     * @return string
-     */
-    protected function getAttr_dbName() : string {
-        return $this->dbName;
-    }
+  /**
+   * @return string
+   */
+  protected function getAttr_dbName() : string {
+    return $this->dbName;
+  }
     
-    /**
-     * @param string $p_dbCodepage Default 'utf8mb4'.
-     */
-    protected function setAttr_dbCodepage(string $p_dbCodepage ='utf8mb4') : void {
-        $this->dbCodepage = (string) $p_dbCodepage;
-    }
+  /**
+   * @param string $p_dbCodepage Default 'utf8mb4'.
+   */
+  protected function setAttr_dbCodepage(string $p_dbCodepage ='utf8mb4') : void {
+    $this->dbCodepage = (string) $p_dbCodepage;
+  }
 
-    protected function getAttr_dbCodepage() : string {
-        return $this->dbCodepage;
-    }
+  protected function getAttr_dbCodepage() : string {
+    return $this->dbCodepage;
+  }
 
-    protected function setAttr_dbConnection(&$pbr_dbConnection) : void {
-        $this->dbConnection = $pbr_dbConnection;
-    }
+  /**
+   * @param string $p_errorMesg
+   * @return void
+   */
+  protected static function logError($p_errorMesg ='') : void {
+    // Log occured error
+    $customDateTimeObj = CustomDateTime::getInstance();
+    $logEntry = sprintf('%s, Error: %s'. PHP_EOL, $customDateTimeObj->getFormatedDatetime(), $p_errorMesg);
+    $logFile = APP_LOG_PATH .sprintf('%s.log', 'errors.pdo-mysql');
+    $fileHandler = FileHandler::getInstance();
+    $fileHandler->appendToFile($logFile, $logEntry);
+  }
 
-    /**
-     * @param string $p_errorMesg
-     * @return void
-     */
-    protected static function logError($p_errorMesg ='') : void {
-        // Log occured error
-        $customDateTimeObj = CustomDateTime::getInstance();
-        $logEntry = sprintf('%s, Error: %s'. PHP_EOL, $customDateTimeObj->getFormatedDatetime(), $p_errorMesg);
-        $logFile = APP_LOG_PATH .sprintf('%s.log', 'errors.pdo-mysql');
-        $fileHandler = FileHandler::getInstance();
-        $fileHandler->appendToFile($logFile, $logEntry);
-    }
+  /**
+   * @return string
+   */
+  public static function getFormat_ofDateTime() : string {
+    return 'Y-m-d H:i:s';
+  }
 
-    /**
-     * @return string
-     */
-    public static function getFormat_ofDateTime() : string {
-        return 'Y-m-d H:i:s';
-    }
+  /**
+   * @return string
+   */
+  public static function getFormat_ofDate() : string {
+    return 'Y-m-d';
+  }
 
-    /**
-     * @return string
-     */
-    public static function getFormat_ofDate() : string {
-        return 'Y-m-d';
-    }
+  /**
+   * @param resource $p_dbPDOConnection
+   * @return bool
+   */
+  public static function doesDatabaseConnection_meetCriterias($p_dbPDOConnection) : bool {
+    return (is_object($p_dbPDOConnection) && ($p_dbPDOConnection instanceof PDO));
+  }
 
-    /**
-     * @return PDO
-     */
-    public function getPDOConnectionInstance() : PDO {
-        return $this->getAttr_dbConnection();
-    }
-
-    /**
-     * @return PDO
-     */
-    public function getAttr_dbConnection() : PDO {
-        return $this->dbConnection;
-    }
-
-    public function enableAutoCommit(PDO $p_dbPDOConnection) : void {
-        $p_dbPDOConnection->setAttribute(PDO::ATTR_AUTOCOMMIT, 1);
-    }
+  /**
+   * Enables auto-commit for transactions.
+   * @return void
+   */
+  public function enableAutoCommit(PDO $p_dbPDOConnection) : void {
+    $p_dbPDOConnection->setAttribute(PDO::ATTR_AUTOCOMMIT, 1);
+  }
   
-    public function disableAutoCommit(PDO $p_dbPDOConnection) : void {
-        $p_dbPDOConnection->setAttribute(PDO::ATTR_AUTOCOMMIT, 0);
-    }
+  /**
+   * Disables auto-commit for transactions.
+   * @return void
+   */
+  public function disableAutoCommit(PDO $p_dbPDOConnection) : void {
+    $p_dbPDOConnection->setAttribute(PDO::ATTR_AUTOCOMMIT, 0);
+  }
 
-    public function beginTransaction() : void {
-        $dbPDOConnection = $this->getAttr_dbConnection();
-        // First explicitly disable auto-commit to initiate the transaction.
-        $this->disableAutoCommit($dbPDOConnection);
-        $dbPDOConnection->beginTransaction();
-     }
-  
-     public function commit() : void {
-        $dbPDOConnection = $this->getAttr_dbConnection();
-        // First commit
-        $dbPDOConnection->exec('COMMIT WORK');
-        $dbPDOConnection->commit();
-  
-        // Go back to auto-commit again.
-        $this->enableAutoCommit($dbPDOConnection);
-     }
-  
-     public function rollback() : void {
-        $dbPDOConnection = $this->getAttr_dbConnection();
-        $dbPDOConnection->rollBack();
-     }
+  /**
+   * @param string $p_pdoModule Default 'mysql'
+   * @return bool
+   */
+  public static function isRequiredPDODriverInstalled(string $p_pdoModule ='mysql') : bool {
+    $arrInstalledDrivers = PDO::getAvailableDrivers();
+    if (empty($arrInstalledDrivers)) {
+      return FALSE;
+    } else {
+      return in_array($p_pdoModule, $arrInstalledDrivers, TRUE);
+    }
+  }
+
+  /**
+   * @param resource $pbr_dbConnection
+   * @return void
+   */
+  protected function setAttr_dbConnection(&$pbr_dbConnection) : void {
+    $this->dbConnection = $pbr_dbConnection;
+  }
+
+  /**
+   * @return PDO
+   */
+  public function getPDOConnectionInstance() : PDO {
+    return $this->dbConnection;
+  }
+
+  /**
+   * @return PDO
+   */
+  public function getAttr_dbConnection() : PDO {
+    return $this->dbConnection;
+  }
+
+  public function enableLocalInFile(PDO $p_dbPDOConnection) : void {
+    $p_dbPDOConnection->setAttribute(PDO::MYSQL_ATTR_LOCAL_INFILE, 1);
+  }
+
+  /**
+   * @return bool
+   */
+  public function beginTransaction() : bool {
+    $dbPDOConnection = $this->getAttr_dbConnection();
+    // First explicitly disable auto-commit to initiate the transaction.
+    $this->disableAutoCommit($dbPDOConnection);
+    return $dbPDOConnection->beginTransaction();
+  }
+
+  /**
+   * Commits the current transaction.
+   * @return bool
+   */
+  public function commit() : bool {
+    $dbPDOConnection = $this->getAttr_dbConnection();
+    return $dbPDOConnection->commit();
+/*
+    // Go back to auto-commit again.
+    $this->enableAutoCommit($dbPDOConnection);
+*/
+  }
+
+  /**
+   * Does a rollback on the current database-transaction.
+   * @return bool
+   */
+  public function rollback() : bool {
+    $dbPDOConnection = $this->getAttr_dbConnection();
+    return $dbPDOConnection->rollBack();
+  }
 
    /**
     * Execute an SQL statement and return the number of affected rows.
     * 
     * @param PDO $p_dbPDOConnection
     * @param string $p_sqlStatement
-    * 
     * @return int
+    * @todo Ivan: This is maybe NOT used - this method look wired!
     */
     public function execute(PDO $p_dbPDOConnection, string $p_sqlStatement) : int {
-        try {
+       try {
          return $p_dbPDOConnection->exec($p_sqlStatement);
        } catch (PDOException $e) {
          self::logError($e->getMessage());
@@ -210,21 +259,21 @@ class DBAbstraction
      * 
      * @return mixed
      */
-    public function fetchColumnX(PDOStatement $p_pdoStatementObj, $p_idxX =0) {
+    public function fetchColumnX(PDOStatement $p_pdoStatement, $p_idxX =0) {
         try {
-            $p_pdoStatementObj->execute();
-            $dbResultSet = $p_pdoStatementObj->fetchColumn($p_idxX);
-            $p_pdoStatementObj->closeCursor();
+            $p_pdoStatement->execute();
+            $dbResultSet = $p_pdoStatement->fetchColumn($p_idxX);
+            $p_pdoStatement->closeCursor();
             return $dbResultSet;
         } catch (PDOException $e) {
             self::logError($e->getMessage());
         }
     }
 
-    public function fetchRow_asAssocArray(PDOStatement $p_pdoStatementObj) {
+    public function fetchRow_asAssocArray(PDOStatement $p_pdoStatement) {
         try {
-            $p_pdoStatementObj->execute();
-            return $p_pdoStatementObj->fetch(PDO::FETCH_ASSOC);
+            $p_pdoStatement->execute();
+            return $p_pdoStatement->fetch(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             self::logError($e->getMessage());
         }
@@ -246,25 +295,29 @@ class DBAbstraction
 
     public function fetchAll_asObjectArray(PDOStatement $p_pdoStatement, $p_className) : array {
         try {
-            // Run fetch-loop
             do {
+                // Run fetch-loop
                 $arrRowAssoc = $this->fetchRow_asAssocArray($p_pdoStatement);
+                // $p_pdoStatement->setFetchMode(PDO::FETCH_CLASS, $p_className, $arrRowAssoc);
                 $p_pdoStatement->setFetchMode(PDO::FETCH_CLASS, $p_className, $arrRowAssoc);
+                
                 $arrResult = $p_pdoStatement->fetchAll(PDO::FETCH_CLASS);
             } while ($p_pdoStatement->nextRowset());
 
-            $p_pdoStatement->closeCursor();
-            return $arrResult;
+            $wasSuccessful = $p_pdoStatement->closeCursor();
+            if ($wasSuccessful) {
+              return $arrResult;
+            }            
         } catch (PDOException $e) {
             self::logError($e->getMessage());
         }
     }
 
-    public function fetchObject(PDOStatement $p_pdoStatementObj, $p_className ='StdClass') {
+    public function fetchObject(PDOStatement $p_pdoStatement, $p_className ='StdClass') {
         try {
-            $arrRowAssoc = $this->fetchRow_asAssocArray($p_pdoStatementObj);
-            $initalizedObj = $p_pdoStatementObj->setFetchMode(PDO::FETCH_CLASS, $p_className, $arrRowAssoc);
-            $p_pdoStatementObj->closeCursor();
+            $arrRowAssoc = $this->fetchRow_asAssocArray($p_pdoStatement);
+            $initalizedObj = $p_pdoStatement->setFetchMode(PDO::FETCH_CLASS, $p_className, $arrRowAssoc);
+            $p_pdoStatement->closeCursor();
             return $initalizedObj;
         } catch (PDOException $e) {
             self::logError($e->getMessage());
@@ -290,14 +343,5 @@ class DBAbstraction
         } catch (PDOException $e) {
             self::logError($e->getMessage());
         }
-    }
-
-    /**
-     * @param string $p_str
-     * @return string
-     */
-    public function getQuotedString($p_str) : string {
-        $dbPDOConnection = $this->getAttr_dbConnection();
-        return $dbPDOConnection->quote($p_str, PDO::PARAM_STR);
     }
 } // End class

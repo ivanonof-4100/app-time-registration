@@ -117,29 +117,30 @@ class JsonConfigReader extends FileHandler {
         }
     }
 
+    /**
+     * @return array
+     * @throws Exception
+     */
     public function load() : array {
-        $configFile = $this->getFullFilename_configFile();        
-        if ($this->doesFileExists($configFile)) {
-            if ($this->isReadable($configFile)) {
-              try {
-                $rawJSON = $this->getFileContent($configFile);
-                if ($this->isJsonValid($rawJSON, $pbr_arrConfigData)) {
-                    return $pbr_arrConfigData;
-                } else {
-                    return array();
-                }
-              } catch (Exception $e) {
-                echo $e->getMessage();
-                exit(13);
-              }
-              
-            } else {
-              trigger_error(sprintf("JSON config-file %s was un-readable ...", $configFile));
-              exit(11);
-            }
+      $configFile = $this->getFullFilename_configFile();        
+      if (!$this->doesFileExists($configFile)) {
+        throw new Exception(sprintf("The JSON configuration-file %s does NOT exists ...", $configFile));
+      } else {
+        if (!$this->isReadable($configFile)) {
+          throw new Exception(sprintf("JSON config-file %s was un-readable ...", $configFile));
         } else {
-            trigger_error(sprintf("JSON config-file %s does NOT exists ...", $configFile));
-            exit(10);
+          try {
+            $rawJSON = $this->getFileContent($configFile);
+            if ($this->isJsonValid($rawJSON, $pbr_arrConfigData)) {
+              return $pbr_arrConfigData;
+            } else {
+              return array();
+            }
+          } catch (Exception $e) {
+            // Re-throw the exception to catch at a higher level.
+            throw new Exception($e->getMessage());
+          }
         }
+      }
     }
-}
+} // End class

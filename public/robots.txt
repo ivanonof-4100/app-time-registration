@@ -1,0 +1,9 @@
+User-Agent: *
+Disallow: /api/
+Disallow: /error-pages/
+Allow: /da/
+Disallow:/da/admin/
+Allow: /en/
+Disallow:/en/admin/
+Allow: /es/
+Disallow:/es/admin/

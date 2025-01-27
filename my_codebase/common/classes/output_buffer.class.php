@@ -1,16 +1,15 @@
 <?php
 namespace Common\Classes;
-
 use Common\Classes\CustomString;
 
 /**
- * Filename     : @filesource output_buffer.class.php
- * Language     : PHP v5.x
+ * Filename     : output_buffer.class.php
+ * Language     : PHP v7.x
  * Date created : 08/05-2013, Ivan
- * Last modified: 09/10-2013, Ivan
+ * Last modified: 05/06-2023, Ivan
  * Developers   : @author Ivan Mark Andersen <ivanonof@gmail.com>
  * 
- * @copyright Copyright (C) 2013 by Ivan Mark Andersen
+ * @copyright Copyright (C) 2023 by Ivan Mark Andersen
  * 
  * Description:
  *  My custom output-buffer that wraps all the actions that you can do on a output-buffer.
@@ -59,13 +58,13 @@ class OutputBuffer
    * @return OutputBuffer
   */
   public function __construct($p_useImplicitFlush =FALSE, $p_internalEncoding ='UTF-8', $p_externalEncoding ='UTF-8') {
-     $this->buffer = CustomString::getInstance($p_internalEncoding);
-
      // Make sure that output-buffering is enabled.
      if (!self::isOutputBufferingEnabled()) {
        // Enable output-buffering.
        self::enableOutputBuffering();
-  	  } 
+     }
+ 
+     $this->buffer = CustomString::getInstance('', $p_internalEncoding);
 
      if ($p_useImplicitFlush === TRUE) {
        $this->turnOn_implicitFlush();
@@ -186,7 +185,7 @@ class OutputBuffer
   public static function enableOutputBuffering() : void {
   	 $previousValue = ini_set('output_buffering', 'On');
   	 if ($previousValue === FALSE) {
-      trigger_error(__METHOD__ .': Sorry! - It was not possible to enable output-buffering ...', E_USER_ERROR);
+      trigger_error(__METHOD__ .': It was NOT possible to enable output-buffering ...', E_USER_ERROR);
   	 }
   }
 
@@ -206,6 +205,23 @@ class OutputBuffer
   }
 
   /**
+   * @return bool
+   */
+  public static function doesBrowserSupport_compressedContent() : bool {
+    // Check if there is any Accept-Encoding HTTP-header.
+    if (!isset($_SERVER['HTTP_ACCEPT_ENCODING'])) {
+      return FALSE;
+    } else {
+      $arrSupportedEncodings = explode(',', $_SERVER['HTTP_ACCEPT_ENCODING']);
+      if (!is_array($arrSupportedEncodings)) {
+        return ($arrSupportedEncodings == 'gzip');
+      } else {
+        return array_key_exists('gzip', $arrSupportedEncodings);
+      }
+    }
+  }
+ 
+  /**
    * @return void
    */
   public function startOutputBuffering() : void {
@@ -215,9 +231,15 @@ class OutputBuffer
          // Start output-buffering using an iconv-handler to convert encoding.
          ob_start("ob_iconv_handler");
        } else {
-         // Starting normal output-buffering without an iconv-handler because both the internal and the external charset is the same.
-         mb_http_output($this->getAttr_encoding_charset_internal());
-         ob_start("mb_output_handler");
+         if (self::doesBrowserSupport_compressedContent()) {
+           // Starting normal output-buffering without an iconv-handler.
+           mb_http_output($this->getAttr_encoding_charset_internal());
+           ob_start("ob_gzhandler");
+         } else {
+           // Starting normal output-buffering without an iconv-handler.
+           mb_http_output($this->getAttr_encoding_charset_internal());
+           ob_start("mb_output_handler");
+         }
        }
      }
   }
@@ -236,7 +258,9 @@ class OutputBuffer
   	 } else {
        // Else just flush and send the content of the output-buffer to the web-browser.
        $this->flush();
-       $wasSuccessful = $this->clean();
+       if ($this->getBufferLength()) {
+        $wasSuccessful = $this->clean();
+       }
   	 }
   }
 
@@ -260,7 +284,10 @@ class OutputBuffer
    * @return void
    */
   public function flush() : void {
-  	 ob_flush(); // Flush (send) the output-buffer and turn off output-buffering.
+    // We only need flush, if an output-buffer is active.
+    if (ob_get_level() > 0) {
+      ob_flush();
+    }
   }
 
   /**
@@ -268,10 +295,10 @@ class OutputBuffer
    * @return string|bool If output-buffering isn't active then FALSE is returned.
    */
   public function fetchContentsClean() {
-     return ob_get_clean();
+    return ob_get_clean();
   }
 
   public function clean() {
-     return ob_end_clean();
+    return ob_end_clean();
   }
 } // End class

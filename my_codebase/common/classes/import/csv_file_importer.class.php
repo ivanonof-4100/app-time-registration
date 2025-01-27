@@ -1,6 +1,13 @@
 <?php
+namespace Common\Classes\Import;
+
+use Common\Classes\Import\CSVFileHandler;
+use Exception;
+use ReflectionMethod;
+use PDO;
+
 /**
- * Script-name  : csv_file_importer.class.php
+ * Filename  : csv_file_importer.class.php
  * Language     : PHP v7.x
  * Author(s)    : @author IMA, Ivan Mark Andersen <ivanonof@gmail.com>
  * Date created : IMA, 06/09-2016
@@ -8,21 +15,21 @@
  * 
  * @copyright Copyright (C) 2016 by Ivan Mark Andersen
  *
- * Description
- *  Wraps handling of import of CSV-files - Comma-Seperated-Values (CVS).
- *  Remember that, if the MySQL-server is setup with the 'secure-file-priv',
- *  Then the csv-files need to be in a special directory for MySQL to be able
- *  to read the csv-file. Where that place is you can look up using the SQL
- *  below.
+ * DESCRIPTION:
+ * 
+ * Wraps handling of import of CSV-files - Comma-Seperated-Values (CVS).
+ * Remember that, if the MySQL-server is setup with the 'secure-file-priv',
+ * Then the csv-files need to be in a special directory for MySQL to be able
+ * to read the csv-file. Where that place is you can look up using the SQL below.
  *
- *  select @@GLOBAL.secure_file_priv AS SECURE_LOCATION;
+ * SELECT @@GLOBAL.secure_file_priv AS SECURE_LOCATION;
  *
  * @example:
- *  // Import the CSV-file.
- *  $importFile = PATH_IMPORT_FILES .'Product.csv';
- *  $csvFileImporterObj = CSVFileImporter::getInstance($importFile, ';');
- *  $csvFileImporterObj->importFile_loadIntoDBTable($baseTable, $dbPDOConnection);
- *  $wasSuccessful = $csvFileImporterObj->importFile();
+ * // Import the CSV-file.
+ * $importFile = PATH_IMPORT_FILES .'Product.csv';
+ * $csvFileImporter = CSVFileImporter::getInstance($importFile, ';');
+ * $csvFileImporter->importFile_loadIntoDBTable($baseTable, $dbPDOConnection);
+ * $wasSuccessful = $csvFileImporter->importFile();
 */
 
 /*
@@ -37,7 +44,6 @@ With the function memory_get_usage() you can find out how much memory your scrip
 
 You might also want to have a look at fgets() which allows you to read a file line by line. I am not sure if that takes less memory, but I really think this will work. But even in this case you have to increase the max_execution_time to a higher value.
 */
-require_once PATH_COMMON_IMPORT .'csv_file_handler.class.php';
 
 class CSVFileImporter
 {
@@ -80,9 +86,9 @@ class CSVFileImporter
     */
    public function getAttr_method_persist_data() {
       return $this->method_persist_data;
-   } // method getAttr_method_persist_data
+   }
 
-   public function setAttr_csv_file_handler(CSVFileHandler $p_csvFileHandler) {
+   public function setAttr_csv_file_handler(CSVFileHandler $p_csvFileHandler) : void {
       $this->csv_file_handler = $p_csvFileHandler;
    }
  
@@ -154,9 +160,9 @@ class CSVFileImporter
           $arrRowValues = explode($valueDelimiter, $lineData);
           $persistDataMethod = $arrPersistDataMethod['non-callback'];
           if (method_exists($this, $persistDataMethod)) {
-            $methodReflectionObj = new \ReflectionMethod($this, $persistDataMethod);
+            $methodReflection = new ReflectionMethod($this, $persistDataMethod);
             // Check if requested method is public.
-            if ($this->isPublic()) {
+            if ($methodReflection->isPublic()) {
               $this->$persistDataMethod($arrFields, $arrRowValues);
             } else {
               // Trigger error.
@@ -167,6 +173,7 @@ class CSVFileImporter
           }
 
           unset($lineData);
+
         } // End while
 
         $csvFileHandlerObj->closeFile();
@@ -188,12 +195,14 @@ class CSVFileImporter
       $importFile = $csvFileHandlerObj->getFilename();
       $valueDelimiter = $csvFileHandlerObj->getAttr_csv_file_delimiter();
 
+      // Setup SQL-statement.
       $sql = "LOAD DATA INFILE '". $importFile ."'
         REPLACE INTO TABLE ". $p_tableName ." FIELDS TERMINATED BY '". $valueDelimiter ."' ENCLOSED BY '\"' LINES TERMINATED BY '\r\n' IGNORE 1 LINES";
       try {
         return $p_dbPDOConnection->exec($sql);
       } catch(Exception $e) {
-        echo $e->getMessage();
+        // Re-throw Exception
+        throw new Exception($e->getMessage(), $e->getCode());
       }
-   } // method importFile_intoDBTable
+   }
 } // End class

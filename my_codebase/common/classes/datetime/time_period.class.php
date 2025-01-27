@@ -6,7 +6,7 @@ use Common\Classes\CustomString;
 
 /**
  * Filename     : time_period.class.php
- * Language     : PHP v7.4, v7.2+
+ * Language     : PHP v7.4
  * Date created : 27/11-2020, Ivan
  * Last modified: 27/11-2020, Ivan
  * Developers   : @author Ivan Mark Andersen <ivanonof@gmail.com>
@@ -46,16 +46,6 @@ class TimePeriod
     /**
      * @return string
      */
-/*    
-    public function __toString() : string {
-        $customDateTime_fromDate = $this->getAttr_fromDate();
-        $customDateTime_toDate = $this->getAttr_toDate();
-        return sprintf('%s - (%s - %s)', $this->getAttr_periodName(), $customDateTime_fromDate, $customDateTime_toDate);
-    }
-*/
-    /**
-     * @return string
-     */
     public function __toString() : string {
        $fromDate = $this->getAttr_fromDate();
        $fromDateTime = $fromDate->getInstance_dateTime();
@@ -70,7 +60,7 @@ class TimePeriod
          // Named period
          return sprintf("%s : %s - %s", $this->getAttr_periodName(), $fromDateTime->format("d-m-Y"), $toDateTime->format("d-m-Y"));
        }
-    } // method __toString
+    }
 
     public static function getInstance($p_fromDate, $p_toDate, $p_periodName ='') : TimePeriod {
         return new TimePeriod($p_fromDate, $p_toDate, $p_periodName);

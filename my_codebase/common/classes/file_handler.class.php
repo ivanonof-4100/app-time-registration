@@ -3,36 +3,25 @@ namespace Common\Classes;
 use Exception;
 
 /**
- * Script-name  : file_handler.class.php
- * Language     : PHP v7.4+, 7.2+, v5.x
+ * Filename     : file_handler.class.php
+ * Language     : PHP v7.4
  * Date created : 03/11-2012, Ivan
- * Last modified: 04/10-2022, Ivan
+ * Last modified: 16/05-2023, Ivan
  * Developers   : @author Ivan Mark Andersen <ivanonof@gmail.com>
  * 
- * @copyright Copyright (C) 2012, 2016 by Ivan Mark Andersen
+ * @copyright Copyright (C) 2023 by Ivan Mark Andersen
  *
- * Description
- *  Wraps basic file-handling for easy access to file-handling.
+ * DESCRIPTION:
+ * Wraps basic file-handling for easy access to file-handling.
  *
  * @example #1:
- *  $filename = '/etc/passwd';
- *  if (FileHandler::isRegularFile($filename) && FileHandler::isReadable($filename)) {
- *    echo $filename .' is a regular-file and is readable ...';
- *  }
- * 
- * @example #2:
- *   // Log occured error
- *   $customDateTimeObj = CustomDateTime::getInstance();
- *   $logEntry = sprintf('%s, Error: %s, File: %s:%d'. PHP_EOL, $customDateTimeObj->getFormatedDatetime(), $p_errorMesg, $p_errFile, $p_errLine);
- * 
- *   // Write to log-file.
- *   $fileHandler = FileHandler::getInstance();
- *   $fileHandler->appendToFile($logFile, $logEntry);
-*/
+ * $filename = '/etc/passwd';
+ * if (FileHandler::isRegularFile($filename) && FileHandler::isReadable($filename)) {
+ *   echo sprintf("File %s is a regular-file and its also readable ...", $filename);
+ * }
+ */
 class FileHandler
 {
-   const PATH_DELIMITER = '/';
-
    const UNIT_BYTES = 'B';
    const UNIT_KILOBYTES = 'KB';
    const UNIT_MEGABYTES = 'MB';
@@ -48,6 +37,7 @@ class FileHandler
    }
 
    public function __destruct() {
+      clearstatcache(TRUE);
    }
 
    public function __clone() {
@@ -80,11 +70,9 @@ class FileHandler
       // trim path
       $fileDirectory = trim(dirname($p_filename));
       // Normalize path-separators.
-      $fileDirectory = str_replace('/', self::PATH_DELIMITER, $fileDirectory) .self::PATH_DELIMITER;
-
+      $fileDirectory = str_replace(DIRECTORY_SEPARATOR, DIRECTORY_SEPARATOR, $fileDirectory) .DIRECTORY_SEPARATOR;
       // trim file name
       $fileName = trim(basename($p_filename));
-
       // Return the Rebuild filename with path.
       return $fileDirectory."{$fileName}";
    }
@@ -95,7 +83,7 @@ class FileHandler
     * @param string $p_filename
     * @return bool Returns TRUE if the given file is a regular-file otherwise FALSE.
     */
-   public static function isRegularFile($p_filename) : bool {
+   public static function isRegularFile(string $p_filename) : bool {
       return is_file(self::getPrepairedFilename($p_filename));
    }
 
@@ -105,7 +93,7 @@ class FileHandler
     * @param string $p_filename
     * @return bool Returns TRUE if the given file is a directory otherwise FALSE.
     */
-   public static function isDirectory($p_filename) : bool {
+   public static function isDirectory(string $p_filename) : bool {
       return is_dir($p_filename);
    }
 
@@ -115,7 +103,7 @@ class FileHandler
     * @param string $p_filename
     * @return bool Returns TRUE if the given file is a symbolic-link otherwise FALSE.
     */
-   public static function isSymbolicLink($p_filename) : bool {
+   public static function isSymbolicLink(string $p_filename) : bool {
       return is_link($p_filename);
    }
 
@@ -125,17 +113,17 @@ class FileHandler
     * @param string $p_filename
     * @return bool
     */
-   public static function isReadable($p_filename) : bool {
+   public static function isReadable(string $p_filename) : bool {
       return is_readable($p_filename);
    }
 
    /**
-    * Tells whether the filename is writeable.
+    * Tells whether the file is writeable.
     *
     * @param string $p_file
     * @return bool
     */
-   public static function isWriteable($p_filename) : bool {
+   public static function isWriteable(string $p_filename) : bool {
       return is_writable($p_filename);
    }
 
@@ -145,7 +133,7 @@ class FileHandler
     * @param string $p_file
     * @return bool
     */
-   public static function isExecuteable($p_filename) : bool {
+   public static function isExecuteable(string $p_filename) : bool {
       return is_executable($p_filename);
    }
 
@@ -155,8 +143,7 @@ class FileHandler
     * @param string $p_filename
     * @return bool Returns TRUE if the given file exists otherwise FALSE.
     */
-   public static function doesFileExists($p_filename ='') : bool {
-      clearstatcache();
+   public static function doesFileExists(string $p_filename ='') : bool {
       if (empty($p_filename)) {
         return FALSE;
       } else {
@@ -197,11 +184,11 @@ class FileHandler
    }
 
    /**
-    * @param int|string $p_bytes
+    * @param int $p_bytes
     * @param string $p_units Can be 'B','KB','MB','GB' or 'TB'.
     * @return float
     */
-   public static function getConvertedFileSize($p_bytes, $p_units =self::UNIT_BYTES) {
+   public static function getConvertedFileSize(int $p_bytes, string $p_units =self::UNIT_KILOBYTES) : float {
       $bytes = floatval($p_bytes);
       switch ($p_units) {
        case self::UNIT_BYTES :
@@ -219,7 +206,7 @@ class FileHandler
        case self::UNIT_TERABYTES :
          return $bytes/(pow(1024, 4));
          break;
-       default :
+       default:
          return $bytes;
          break;
       }
@@ -231,11 +218,8 @@ class FileHandler
     * @param string $p_filename
     * @return string
     */
-   public static function tidyFilename($p_filename) {
+   public static function tidyFilename(string $p_filename) : string {
       /*
-       * For filename tidying I prefer to only ALLOW certain characters
-       * rather than converting particular ones that we want to exclude.
-       * 
        * This allows letters a-z, digits, space (\\040), hyphen (\\-), underscore (\\_) and backslash (\\\\).
        * Everything else is removed from the string.
        */
@@ -282,7 +266,7 @@ class FileHandler
     *
     * Returns a file-pointer resource on success, or FALSE on error.
     */
-   public function openFile($p_filename, $p_mode ='a+') {
+   public function openFile(string $p_filename, string $p_mode ='a+') {
       try {
         $this->setAttr_file_pointer(fopen($p_filename, $p_mode));
         return $this->getAttr_file_pointer();
@@ -305,13 +289,38 @@ class FileHandler
     *
     * @param string $p_filename
     * @return string
+    * @throws Exception
     */
    public function getFileContent(string $p_filename) : string {
       try {
          return file_get_contents($p_filename);
       } catch (Exception $e) {
-         echo $e->getMessage();
+         // Re-throw exception.
+         throw new Exception($e->getMessage(), $e->getCode());
          exit(1);
+      }
+   }
+
+   /**
+    * Deletes an existing regular file.
+    *
+    * @param string $p_file
+    * @return void
+    * @throws Exception 
+    */
+   public static function deleteFile(string $p_file) : void {
+      try {
+         if (!self::doesFileExists($p_file)) {
+           throw new Exception(sprintf('The given file to delete did NOT exist (%s) ...', $p_file));
+         } else {
+            if (self::isRegularFile($p_file)) {
+              unlink($p_file);
+              clearstatcache(TRUE);
+            }
+         }
+      } catch (Exception $e) {
+         // Re-throws the exception.
+         throw new Exception($e->getMessage());
       }
    }
 } // End class

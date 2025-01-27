@@ -5,22 +5,21 @@ use Exception;
 use Common\Classes\FileHandler;
 
 /**
- * Script-name  : languagefile_handler.class.php
- * Language     : PHP v7.4, v5.x
+ * Filename  : languagefile_handler.class.php
+ * Language     : PHP v7.4
  * Date created : 10/10-2009, Ivan
- * Last modified: 29/11-2013, Ivan
+ * Last modified: 16/04-2023, Ivan
  * Author(s)    : @author Ivan Mark Andersen <ivanonof@gmail.com>
  *
- * @copyright: Copyright (C) 2013 by Ivan Mark Andersen
+ * @copyright: Copyright (C) 2023 by Ivan Mark Andersen
  *
- * Description
- *  Wraps handling of language-files.
+ * DESCRIPTION:
+ * Wraps handling of language-files.
  *
  * @example:
- *  $LanguagefileHandler = LanguagefileHandler::getInstance(FALSE, 'da', 'utf8');
- *
- *  // Loading a language-file: user_profile.lang.da-utf8.php
- *  $LanguagefileHandler->loadLanguageFile('user_profile');
+ * $LanguagefileHandler = LanguagefileHandler::getInstance(FALSE, 'da', 'utf8');
+ * // Loading a language-file: user_profile.lang.da-utf8.php
+ * $LanguagefileHandler->loadLanguageFile('user_profile');
 */
 class LanguagefileHandler extends FileHandler
 {
@@ -30,16 +29,27 @@ class LanguagefileHandler extends FileHandler
   /**
    * @var bool
    */
-  private $useAutoDetect;
+  protected $useAutoDetect;
 
   /**
    * @var string ISO 639-1 (2-char language-code).
    */
-   private $languageIdent;
-   private $codepageIdent;
+   protected $languageIdent;
+
+   /**
+    * @var string Default 'utf8'
+    */
+   protected $codepageIdent;
    private $arrLang;
 
-   public function __construct($p_autoDetect =FALSE, $p_languageIdent =FALSE, $p_codepageCharset =FALSE) {
+   /**
+    * @param bool $p_autoDetect Default FALSE.
+    * @param string $p_languageIdent Default 'da'
+    * @param string $p_codepageCharset Default 'utf8'
+    */
+   public function __construct(bool $p_autoDetect =FALSE,
+                               string $p_languageIdent =self::DEFAULT_LANGUAGE,
+                               string $p_codepageCharset =self::DEFAULT_CHARSET) {
       parent::__construct();
       $this->useAutoDetect = $p_autoDetect;
 
@@ -49,12 +59,7 @@ class LanguagefileHandler extends FileHandler
         $this->setLanguageIdent($p_languageIdent);
       }
 
-      if ($p_codepageCharset) {
-        $this->setCodepageIdent($p_codepageCharset);
-      } else {
-        $this->setCodepageIdent();  
-      }
-
+      $this->setCodepageIdent($p_codepageCharset);
       $this->arrLang = array();
    }
 
@@ -62,7 +67,15 @@ class LanguagefileHandler extends FileHandler
       parent::__destruct();
    }
 
-   public static function getInstance($p_autoDetect =FALSE, $p_languageIdent =FALSE, $p_codepageCharset =FALSE) : LanguagefileHandler {
+   /**
+    * @param bool $p_autoDetect Default FALSE.
+    * @param string $p_languageIdent Default 'da'
+    * @param string $p_codepageCharset Default 'utf8'
+    * @return LanguagefileHandler
+    */
+   public static function getInstance(bool $p_autoDetect =FALSE,
+                                      string $p_languageIdent =self::DEFAULT_LANGUAGE,
+                                      string $p_codepageCharset =self::DEFAULT_CHARSET) : LanguagefileHandler {
       return new LanguagefileHandler($p_autoDetect, $p_languageIdent, $p_codepageCharset);
    }
   
@@ -102,13 +115,13 @@ class LanguagefileHandler extends FileHandler
     * Setup the use of locales.
     * @param string|boolean $p_posixLanguageIdent.
     *
-    * Note:
-    *  Make sure the right langeuage-packs is installed.
-    *  You can ether install the seperate language-packs you want or just install all langeuage-packs at once.
-    *  Debian GNU/Linux: apt-get install locales-all
+    * NOTE:
+    * Make sure the right langeuage-packs is installed.
+    * You can ether install the seperate language-packs you want or just install all langeuage-packs at once.
+    * Debian GNU/Linux: apt-get install locales-all
     *
-    *  After installing the correct language-packs the your need to restart the Apache web-server.
-    *  The locale "da_DK.utf8" can then be used in PHP5 after restarting Apache.
+    * After installing the correct language-packs the your need to restart the Apache web-server.
+    * The locale "da_DK.utf8" can then be used in after restarting the web-server.
     */
    private function setupLocales($p_posixLanguageIdent =false) {
       if ($p_posixLanguageIdent) {
@@ -139,11 +152,11 @@ class LanguagefileHandler extends FileHandler
    }
 
    /**
-    * Detects the locale lanugage-ident of the web-browser.
+    * Detects the perfered locale language-ident of the web-browser.
     * @return string Return locale e.g 'es', 'en', 'de', 'da' ...
     */
-   private function getDetectedLanguageOfBrowser() {
-      if ($_SERVER['HTTP_ACCEPT_LANGUAGE']) {
+   public static function getDetectedLanguageOfBrowser() {
+      if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
         // Detect the prefered language. 
         return substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2);
       } elseif ($_SERVER['HTTP_USER_AGENT']) {
@@ -151,8 +164,7 @@ class LanguagefileHandler extends FileHandler
         $detectedLanguageIdent = self::DEFAULT_LANGUAGE;
         $userAgentStr = explode(';', $_SERVER['HTTP_USER_AGENT']);
 
-        for ($i=0; $i < sizeof($userAgentStr); $i++)
-        {
+        for ($i=0; $i < sizeof($userAgentStr); $i++) {
            $arrLanguages = explode('-', $userAgentStr[$i]);
            if (sizeof($arrLanguages) == 2) {
              if (strlen(trim($arrLanguages[0])) == 2) {
@@ -160,11 +172,10 @@ class LanguagefileHandler extends FileHandler
              }
            }
         } // for-loop
-
         return $detectedLanguageIdent;
       } else {
         // Default something!
-        return self::DEFAULT_LANGUAGE;
+        return APP_LANGUAGE_IDENT;
       }
    }
 
@@ -201,7 +212,7 @@ class LanguagefileHandler extends FileHandler
    	  if ($p_customFilePath) {
    	  	return $p_customFilePath . $filename;
    	  } else {
-   	  	return PATH_LANGUAGE . $filename;
+   	  	return APP_LANGUAGE_PATH . $filename;
    	  }
    }
 
@@ -210,7 +221,6 @@ class LanguagefileHandler extends FileHandler
     *
     * @param string $p_pseudoLanguageFile
     * @param string|boolean $p_customFilePath Default FALSE
-    * 
     * @return boolean Returns TRUE on successful file load otherwise FALSE.
     */
    public function loadLanguageFile($p_pseudoLanguageFile, $p_customFilePath =FALSE) {
@@ -224,11 +234,10 @@ class LanguagefileHandler extends FileHandler
           	  $this->arrLang = array_merge($this->arrLang, $lang);
           	  $wasSuccessful = (boolean) true;
               return $wasSuccessful;
-          } else {
-          	$wasSuccessful = (boolean) false;
-        	  trigger_error(__METHOD__ .": It was not possible to merge the language-entries of the language-file ($realLanguageFilename) with the language-entries in use ...", E_USER_WARNING);
-          }
-          //  exit(1);
+            } else {
+            	$wasSuccessful = (boolean) false;
+        	    trigger_error(__METHOD__ .": It was not possible to merge the language-entries of the language-file ($realLanguageFilename) with the language-entries in use ...", E_USER_WARNING);
+            }
           } catch(Exception $e) {
             echo $e->getMessage();
           }
@@ -243,6 +252,32 @@ class LanguagefileHandler extends FileHandler
       }
 
       return $wasSuccessful;
+   }
+
+   /**
+    * Loads multiple language-files.
+    * @param string $p_langFiles Eg. "'admin_pages','custom_datetime'"
+    * @param string $p_customFilePath
+    * @return void
+    */
+   public function loadLanguageFiles(string $p_langFiles ='', string $p_customFilePath) : void {
+     $arrLangFiles = explode(',', $p_langFiles);
+     if (is_array($arrLangFiles)) {
+       foreach ($arrLangFiles as $curLangFile) {
+         try {
+          $this->loadLanguageFile($curLangFile, $p_customFilePath);
+         } catch (Exception $e) {
+          Throw new Exception($e->getMessage());
+         }
+       }
+     } else {
+       // Load only a single language-file.
+       try {
+        $this->loadLanguageFile($p_langFiles, $p_customFilePath);
+       } catch (Exception $e) {
+        Throw new Exception($e->getMessage());
+       }
+     }
    }
 
    /**
@@ -283,9 +318,10 @@ class LanguagefileHandler extends FileHandler
    }
 
    /**
+    * @param string $p_entryIdent
     * @return boolean
     */
-   public function doesLanguageEntryExists($p_entryIdent) {
+   public function doesLanguageEntryExists(string $p_entryIdent) {
       return array_key_exists($p_entryIdent, $this->arrLang);
    }
 
@@ -332,7 +368,7 @@ class LanguagefileHandler extends FileHandler
           return FALSE;
         }
       } else {
-        trigger_error(__METHOD__ .' No arguments were passed to the method! There need to be at least one ...', E_USER_ERROR);
+        trigger_error(__METHOD__ .': No arguments were passed to the method! There need to be at least one ...', E_USER_ERROR);
       }
    }
 } // End class

@@ -1,6 +1,10 @@
 <?php
+namespace Common\Classes;
+use Common\Classes\DebugMessage;
+use Common\Classes\Renderes\Template;
+
 /**
- * Script-name  : debug_message_handler.class.php 
+ * Filename  : debug_message_handler.class.php 
  * Language     : PHP v5.x
  * Date created : IMA, 19/11-2012
  * Last modified: IMA, 20/11-2012
@@ -21,7 +25,6 @@
  *
  *  $formatedDebugOutput = $debugMesgHandlerObj->getReportedMessages();
 */
-require_once(PATH_COMMON_CLASSES .'debug_message.class.php');
 
 class DebugMessageHandler
 {
@@ -37,6 +40,14 @@ class DebugMessageHandler
   protected $debug_threshold;
   protected $arr_debug_messages;
 
+  protected $arrDebugLevels = [
+    'config' => 'Configuration',
+    'starter' => 'Starter scripts',
+    'db' => 'Database operations',
+    'content' => 'Content classes',
+    'renderer' => 'Renderer classes'
+  ];
+  
   // Methods
 
   /**
@@ -44,7 +55,7 @@ class DebugMessageHandler
    * @param int|boolean $p_customThreshold Default FALSE
    */
   public function __construct($p_customThreshold =FALSE) {
-     if (!DEBUG) {
+     if (!APP_DEBUG_MODE) {
        $this->setAttr_debug_threshold(self::DEBUG_THRESHOLD_NONE);
        $this->arr_debug_messages = null;
      } else {
@@ -57,21 +68,21 @@ class DebugMessageHandler
 
        $this->arr_debug_messages = array();
      }
-  } // method __construct
+  }
 
   public function __destruct() {
-  } // method __destruct
+  }
 
   protected function setAttr_debug_threshold($p_debugThreshold = self::DEBUG_THRESHOLD_RENDERER) {
      $this->debug_threshold = (int) $p_debugThreshold;
-  } // method setAttr_debug_threshold
+  }
 
   /** 
    * @return int
    */
   protected function getAttr_debug_threshold() {
      return $this->debug_threshold;
-  } // method getAttr_debug_threshold
+  }
 
   /**
    * Adds a debug-message.
@@ -87,32 +98,19 @@ class DebugMessageHandler
        // Add debug-message.
        $this->arr_debug_messages[] = new DebugMessage($p_debugText, $p_filename, $p_lineNumber);
      }
-  } // method addMessage
+  }
 
   /**
    * Retrives the formated output of every debug-message added according to the setup debug-level threshold.
    * @return string
    */
   public function getReportedMessages() {
-     require_once(PATH_CLASSES_RENDERS .'template.class.php');
-
-     // Options of debug-level to use.
-     $arrDebugLevels = array();
-
-     // These are my fixed debug-levels defined in the configuration-file of the codebase.
-     $arrDebugLevels[DEBUG_LEVEL_CONFIG] = 'Configuration';
-     $arrDebugLevels[DEBUG_LEVEL_STARTERSCRIPT] = 'Starter-scripts'; 
-     $arrDebugLevels[DEBUG_LEVEL_DB] = 'Database-operations';
-     $arrDebugLevels[DEBUG_LEVEL_CONTENT] = 'Content-classes';
-     $arrDebugLevels[DEBUG_LEVEL_CONTROLLER] = 'Controller-classes';
-     $arrDebugLevels[DEBUG_LEVEL_RENDERER] = 'Renderer-classes';
-
      // Setup the template to use.
-     $templateObj = new Template('std_list.debug_messages.tpl', PATH_TEMPLATES_STANDARD);
+     $templateObj = new Template('std_list.debug_messages.tpl', Template::PATH_TEMPLATES_STD);
 
      // Send the variables to the template.
      $templateObj->assign('arrDebugMesg', $this->arr_debug_messages);
-     $templateObj->assign('arrDebugLevels', $arrDebugLevels);
+     $templateObj->assign('arrDebugLevels', $this->arrDebugLevels);
      $templateObj->assign('curDebugLevel', $this->getAttr_debug_threshold());
 
      // Return the formated output.
@@ -133,5 +131,5 @@ class DebugMessageHandler
      } else {
        return null;
      } 
-  } // method getInstance_fromSession
+  }
 } // End class

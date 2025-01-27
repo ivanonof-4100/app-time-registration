@@ -4,12 +4,17 @@
             "modules/timesheets/classes/controller",
             "modules/timesheets/classes/model",
             "modules/timesheets/classes/renderes",
+            "modules/about/classes/controller",
+            "modules/about/classes/model",
+            "modules/about/classes/renderes",
             "my_codebase/common/classes",
-            "my_codebase/common/classes/controller",
             "my_codebase/common/classes/db",
+            "my_codebase/common/classes/session",
+            "my_codebase/common/classes/controller",
             "my_codebase/common/classes/model",
+            "my_codebase/common/classes/helper",
             "my_codebase/common/classes/renderes",
-            "my_codebase/common/library/smarty"
+            "my_codebase/common/library/smarty/smarty-4.5.5/libs"
         ]
     },
     "require-dev": {

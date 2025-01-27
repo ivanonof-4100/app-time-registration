@@ -4,7 +4,7 @@ namespace Common\Classes\Renderes;
 use Common\Classes\Renderes\StdRenderer;
 
 /**
- * Script-name  : page_renderer.class.php
+ * Filename  : page_renderer.class.php
  * Language     : PHP v7.x
  * Date created : 15/08-2016, Ivan
  * Last modified: 15/08-2016, Ivan
@@ -18,11 +18,11 @@ use Common\Classes\Renderes\StdRenderer;
 class PageRenderer extends StdRenderer
 {
   /**
-   * @param resource $p_languageFileHandlerObj
-   * @param boolean $p_isPrintPage
+   * @param resource $p_languageFileHandler
    */
-  public function __construct($p_languageFileHandlerObj, $p_isPrintPage =false) {
-     parent::__construct($p_languageFileHandlerObj, $p_isPrintPage);
+  public function __construct($p_languageFileHandler) {
+     parent::__construct($p_languageFileHandler);
+     $this->startOutputBuffering();
   }
 
   public function __destruct() {
@@ -32,14 +32,14 @@ class PageRenderer extends StdRenderer
   /**
    * @return PageRenderer
    */
-  public static function getInstance($p_languageFileHandlerObj, $p_isPrintPage =false) : PageRenderer {
-     return new PageRenderer($p_languageFileHandlerObj, $p_isPrintPage);      
+  public static function getInstance($p_languageFileHandler) : PageRenderer {
+     return new PageRenderer($p_languageFileHandler);      
   }
 
   /**
    * @return string
    */
-  public static function getDomainTitle($p_pageTitle ='') {
+  public static function getDomainTitle($p_pageTitle ='') : string {
      return sprintf(APP_DOMAIN_TITLE, $p_pageTitle);
   }
 
@@ -52,7 +52,6 @@ class PageRenderer extends StdRenderer
 
   public function renderStartpage() {
      $languageHandlerObj = $this->getInstance_languageFileHandler();
-  //   $pageTitle = $languageHandlerObj->getLocalizedContent('STARTPAGE_TITLE', 'TEST', 'Bla');
      $pageTitle = $languageHandlerObj->getLocalizedContent('STARTPAGE_TITLE');
 
      // Get instance of template.
@@ -63,12 +62,16 @@ class PageRenderer extends StdRenderer
      $template->assign('pageDomainTitle', self::getDomainTitle($pageTitle));
      $template->assign('pageMetaDescription', 'Northern-partners, tidsregistering, konsulenter');
      $template->assign('scriptName', self::getScriptName());
-     $template->display();
+
+     // Display
+     $pageMetaDescription = 'Startpage';
+     $pageMetaKeywords = 'Web-app, startpage';
+     $this->displayAsPage($pageTitle, $pageMetaDescription, $pageMetaKeywords, $template->fetch());
   }
 
   public function renderPageNotFound() {
-     $pageTitle = 'Side ikke fundet';
-     $template = Template::getInstance('error_404.tpl');
+     $pageTitle = 'Side ikke fundet - Ivan';
+     $template = Template::getInstance('error_404.tpl', Template::PATH_TEMPLATES_STD);
 
      // Send the variables to the template.
      $template->assign('pageTitle', $pageTitle);
@@ -76,12 +79,15 @@ class PageRenderer extends StdRenderer
      $template->assign('pageMetaDescription', SITE_DOMAIN_NAME .', 404 fejl-side');
      $template->assign('scriptName', self::getScriptName());
 
-     $template->display();
+     // Display
+     $pageMetaDescription = 'Occured error page not found';
+     $pageMetaKeywords = 'Web-app, page not found, 404';
+     $this->displayAsPage($pageTitle, $pageMetaDescription, $pageMetaKeywords, $template->fetch());
   }
 
   public function renderPageInternalError($p_arrLastError) {
      $pageTitle = 'Intern server-fejl';
-     $template = Template::getInstance('error_500.tpl');
+     $template = Template::getInstance('error_500.tpl', Template::PATH_TEMPLATES_STD);
 
      // Send the variables to the template.
      $template->assign('pageTitle', $pageTitle);
@@ -100,7 +106,10 @@ class PageRenderer extends StdRenderer
      if (is_array($p_arrLastError) && array_key_exists('line', $p_arrLastError)) {
 	    $template->assign('errorLine', $p_arrLastError['line']);
      }
-  
-     $template->display();
+
+     // Display
+     $pageMetaDescription = 'Occured internal-error';
+     $pageMetaKeywords = 'Web-app, internal-error, 500';
+     $this->displayAsPage($pageTitle, $pageMetaDescription, $pageMetaKeywords, $template->fetch());
   }
-} // Ends class
+} // End class

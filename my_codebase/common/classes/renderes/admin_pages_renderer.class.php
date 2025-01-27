@@ -1,6 +1,6 @@
 <?php
 /**
- * Script-name  : admin_pages_renderer.class.php
+ * Filename  : admin_pages_renderer.class.php
  * Language     : PHP v7.x
  * Date created : IMA, 17/11-2016
  * Last modified: IMA, 17/11-2016

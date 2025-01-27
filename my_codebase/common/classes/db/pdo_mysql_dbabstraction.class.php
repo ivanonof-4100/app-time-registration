@@ -1,35 +1,35 @@
 <?php
 namespace Common\Classes\Db;
 
+use Common\Classes\Db\DBAbstraction;
 use PDO;
 use PDOStatement;
 use PDOException;
 use Exception;
-use Common\Classes\Db\DBAbstraction;
 
 /**
  * Filename     : pdo_mysql_dbabstraction.class.php
- * Language     : PHP v7.4+, 7.2+, v5.x
+ * Language     : PHP v7.4+, 7.2
  * Date created : 21/01-2014, IMA
- * Last modified: 08/09-2016, IMA
+ * Last modified: 18/05-2023, IMA
  * Developers   : @author IMA Ivan Mark Andersen <ivanonof@gmail.com>
  *
- * @copyright Copyright (C) 2016 by Ivan Mark Andersen
+ * @copyright Copyright (C) 2023 by Ivan Mark Andersen
  *
  * Description:
- *  My own database-abstraction class for MySQL RDBMS using PHP Data Objects (PDO).
+ * My database-abstraction class for MySQL RDBMS using PHP Data Objects (PDO).
  *
- *  For more information on PDO you should read the online PHP-manual on the topic.
- *  URL: http://www.php.net/manual/en/book.pdo.php
+ * For more information on PDO you should read the online PHP-manual on the topic.
+ * URL: http://www.php.net/manual/en/book.pdo.php
  *
- *  @example:
- *  // Get PDO-database-connection.
- *  $mySQLDBAbstractionObj = MySQLDBAbstraction::getInstance('localhost', 'dbname', 'utf8mb4');
- *  $dbPDOConnection = $mySQLDBAbstractionObj->initDatabaseConnection('dbUser', 'dbPass');
+ * @example:
+ * // Get PDO-database-connection.
+ * $mySQLDBAbstraction = MySQLDBAbstraction::getInstance('localhost', 'dbname', 'utf8mb4');
+ * $dbPDOConnection = $mySQLDBAbstraction->initDatabaseConnection('dbUser', 'dbPass');
  */
 class MySQLDBAbstraction extends DBAbstraction
 {
-   const PORT_MYSQL = 3306;
+  const PORT_MYSQL = 3306;
 
    /**
     * Default constructor of the class.
@@ -37,8 +37,6 @@ class MySQLDBAbstraction extends DBAbstraction
     * @param string $p_dbHost
     * @param string $p_dbName
     * @param string $p_dbCodepage Default 'utf8mb4'
-    *
-    * @return MySQLDBAbstraction
     */
    public function __construct($p_dbHost, $p_dbName, $p_dbCodepage ='utf8mb4') {
       parent::__construct();
@@ -50,6 +48,10 @@ class MySQLDBAbstraction extends DBAbstraction
    public function __destruct() {
       $this->disconnect();
       parent::__destruct();
+   }
+
+   protected function __clone() {
+      trigger_error('It is NOT allowed to clone the instance handling the database-connection ...', E_USER_ERROR);
    }
 
    /**
@@ -71,26 +73,23 @@ class MySQLDBAbstraction extends DBAbstraction
     * @return PDO
     * @throws Exception
     */
-   public function initDatabaseConnection(string $p_userName, string $p_userPasswd) : PDO {
+   public function initDatabaseConnection(string $p_userName, string $p_userPasswd) : void {
       try {
-        if (self::isRequiredPDODriverInstalled()) {
-          if (self::isRDBMSRunning()) {
-            try {
-              // Connect to the database using database-abstraction.
-              return $this->connect($p_userName, $p_userPasswd);
-            } catch (Exception $e) {
-              self::logError($e->getMessage());
-              exit(2);
-            }
-          } else {
-            // The RDBMS is NOT running!
-            throw new Exception('The RDBMS is NOT running!');
-            exit(9);
+        if (!self::isRequiredPDODriverInstalled('mysql')) {
+          Throw new Exception('Required PHP PDO-module for handling MySQL connections is NOT installed.', 1);
+        } else {
+          try {
+            // Connect to the database using database-abstraction.
+            $pdoDBConnection = $this->connect($p_userName, $p_userPasswd);
+            $this->setAttr_dbConnection($pdoDBConnection);
+          } catch (Exception $e) {
+            self::logError($e->getMessage());
+            exit(2);
           }
         }
       } catch (Exception $e) {
-        echo $e->getMessage();
-        exit(3);
+        // Re-throws the exception.
+        Throw new Exception($e->getMessage(), 1);
       }
    }
 
@@ -114,113 +113,112 @@ class MySQLDBAbstraction extends DBAbstraction
           self::logError('The MySQL RDBMS is NOT running!');
         } elseif ($pbr_exitCode >= 2) {
           // An error has occured ...
-          self::logError('An error has occured. We actualy dont know, if the RDBMS-server is running or not, so we assume that it is not running ...');
+          self::logError('An error has occured. We actually dont know, if the RDBMS-server is running or not, so we assume that it is not running ...');
         }
       }
 
       return $isRunning;
    }
 
-   /**
-    * @return bool
-    * @throws PDOException
-    */
-   public static function isRequiredPDODriverInstalled() : bool {
-      $arrInstalledDrivers = PDO::getAvailableDrivers();
-      if (empty($arrInstalledDrivers)) {
-        $isRequiredDriverInstalled = FALSE;
+  /**
+   * Connects to the database specifyed when creating the instance.
+   *
+   * @param string $p_dbUsrName
+   * @param string $p_dbUsrPasswd
+   *
+   * @throws PDOException
+   * @return PDO
+   */
+  public function connect(string $p_dbUsrName, string $p_dbUsrPasswd) : PDO {
+    $dsn = sprintf('mysql:host=%s;port=%d;dbname=%s;', $this->getAttr_dbHost(), self::PORT_MYSQL, $this->getAttr_dbName());
+    $arrOptions = array(PDO::MYSQL_ATTR_LOCAL_INFILE =>TRUE, PDO::MYSQL_ATTR_INIT_COMMAND => sprintf('SET NAMES %s', $this->getAttr_dbCodepage()));
+    try {
+      $dbPDOConnection = new PDO($dsn, $p_dbUsrName, $p_dbUsrPasswd, $arrOptions);
+      if (!empty($dbPDOConnection) && ($dbPDOConnection instanceof PDO)) {
+        // Use PDOExceptions, if any errors
+        $dbPDOConnection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $dbPDOConnection->setAttribute(PDO::ATTR_CASE, PDO::CASE_NATURAL);
+        $dbPDOConnection->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+        // Enable things
+        $this->useBufferedResult($dbPDOConnection);
+        $this->enableAutoCommit($dbPDOConnection);
+
+        return $dbPDOConnection;
       } else {
-        $isRequiredDriverInstalled = in_array('mysql', $arrInstalledDrivers, TRUE);
+        self::logError('The instance of the database-connection is NOT of the right type ...');
+        exit(4);
       }
+    } catch (PDOException $e) {
+      // Log occured error
+      self::logError($e->getMessage());
+      exit(3);
+    }
+  }
 
+  public function disconnect() : void {
+    unset($this->dbConnection);
+  }
+
+  /**
+   * @param PDO $p_pdoConnection
+   * @return void
+   */
+  public function useBufferedResult(PDO $p_pdoConnection) : void {
+    $p_pdoConnection->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, TRUE);
+  }
+
+  /**
+   * @param PDO $p_pdoConnection
+   * @return void
+   */
+  public function useUnbufferedResult(PDO $p_pdoConnection) : void {
+    $p_pdoConnection->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, FALSE);
+  }
+
+  /**
+   * @param string $p_str Default blank.
+   * @return string
+   */
+  public function getQuotedString(string $p_str ='') : string {
+    $dbPDOConnection = $this->getAttr_dbConnection();
+    return $dbPDOConnection->quote($p_str, PDO::PARAM_STR);
+  }
+
+  /**
+   * Checks if a given table-name exists in the database.
+   *
+   * @param string $p_baseTableName Default blank.
+   * @return bool
+   */
+  public function doesBasetableExists(string $p_baseTableName ='') : bool {
+    // Setup the SQL-statement
+    $sql = 'SELECT count(TABLE_NAME) AS NUM_RECORDS_FOUND';
+    $sql .= PHP_EOL;
+    $sql .= 'FROM information_schema.tables t';
+    $sql .= PHP_EOL;
+    $sql .= 'WHERE t.TABLE_NAME = :base_table_name';
+    $sql .= PHP_EOL;
+    $sql .= 'AND t.table_schema = :db_name';
+    $sql .= PHP_EOL;
+    $sql .= 'LIMIT 1';
+
+    // Prepare and execute the SQL-statement.
+    $dbPDOConnection = $this->getAttr_dbConnection();
+    $pdoStatement = $dbPDOConnection->prepare($sql);
+    if (!$pdoStatement) {
+      trigger_error(__METHOD__ .': Uable to prepare the SQL-statement. The message was the following: '. $dbPDOConnection->errorInfo(), E_USER_ERROR);
+    } else {
       try {
-        if (!$isRequiredDriverInstalled) {
-          throw new PDOException("The required PHP-Data-Object (PDO) database-driver for handling the MySQL database is NOT installed ...");
-        } else {
-          return $isRequiredDriverInstalled;
-        }
+        $baseTableName = $dbPDOConnection->quote($p_baseTableName, PDO::PARAM_STR);
+        $dbName = $dbPDOConnection->quote($this->getAttr_dbName(), PDO::PARAM_STR);
+
+        // Map parameters and execute the SQL-statement.
+        $pdoStatement->bindParam(':base_table_name', $baseTableName, PDO::PARAM_STR);
+        $pdoStatement->bindParam(':db_name', $dbName, PDO::PARAM_STR);
+        return $this->fetchBooleanResult($pdoStatement);
       } catch (PDOException $e) {
-        self::logError("Server error: {$e->getMessage()}");
-      }
-   }
-
-   /**
-    * Connects to the database specifyed when creating the instance.
-    *
-    * @param string $p_dbUsrName
-    * @param string $p_dbUsrPasswd
-    * @param string $p_dbUsrRole Default FALSE.
-    *
-    * @throws PDOException
-    * @return PDO
-    */
-   public function connect($p_dbUsrName, $p_dbUsrPasswd, $p_dbUsrRole =FALSE) : PDO {
-      $dsn = sprintf('mysql:host=%s;port=%d;dbname=%s;', $this->getAttr_dbHost(), self::PORT_MYSQL, $this->getAttr_dbName());
-      $arrOptions = array(PDO::MYSQL_ATTR_INIT_COMMAND => sprintf('SET NAMES %s', $this->getAttr_dbCodepage()), 'active' => '1');
-
-      try {
-        $dbPDOConnection = new PDO($dsn, $p_dbUsrName, $p_dbUsrPasswd, $arrOptions);
-        if (!empty($dbPDOConnection) && ($dbPDOConnection instanceof PDO)) {
-          // Use PDOExceptions, if any errors
-          $dbPDOConnection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-          // Enable things
-          $this->enableAutoCommit($dbPDOConnection);
-          $this->enableLocalInFile($dbPDOConnection);
-
-          $this->setAttr_dbConnection($dbPDOConnection);
-          return $this->getAttr_dbConnection();
-        } else {
-          self::logError('The instance of the database-connection is NOT of the right type ...');
-          exit(4);
-        }
-      } catch (PDOException $e) {
-        // Log occured error
         self::logError($e->getMessage());
-        exit(3);
       }
-   }
-
-   public function disconnect() : void {
-      unset($this->dbConnection);
-   }
-
-   public function enableLocalInFile(PDO $p_dbPDOConnection) : void {
-      $p_dbPDOConnection->setAttribute(PDO::MYSQL_ATTR_LOCAL_INFILE, 1);
-   }
-
-   /**
-    * @return bool
-    */
-   public function doesBasetableExists($p_baseTableName ='') : bool {
-      $dbPDOConnection = $this->getAttr_dbConnection();
-
-      // Setup the SQL-statement
-      $sql = "SELECT count(TABLE_NAME) AS NUM_RECORDS_FOUND";
-      $sql .= PHP_EOL;
-      $sql .= "FROM information_schema.tables t";
-      $sql .= PHP_EOL;
-      $sql .= "WHERE t.TABLE_NAME = '". $p_baseTableName ."'";
-      $sql .= PHP_EOL;
-      $sql .= "AND t.table_schema = '". $this->getAttr_dbName() ."'";
-      $sql .= PHP_EOL;
-      $sql .= "LIMIT 1";
-
-      // Prepare and execute the SQL-statement.
-      $pdoStatement = $dbPDOConnection->prepare($sql);
-      if (!$pdoStatement) {
-        trigger_error(__METHOD__ .': Uable to prepare the SQL-statement. The message was the following: '. $dbPDOConnection->errorInfo(), E_USER_ERROR);
-      } else {
-        try {
-          $dbName = $dbPDOConnection->quote($this->getAttr_dbName(), PDO::PARAM_STR);
-          $baseTableName = $dbPDOConnection->quote($p_baseTableName, PDO::PARAM_STR);
-
-          // Map parameters and execute the SQL-statement.
-          $pdoStatement->bindParam(':base_table_name', $baseTableName, PDO::PARAM_STR);
-          $pdoStatement->bindParam(':db_name', $dbName, PDO::PARAM_STR);
-          return $this->fetchBooleanResult($pdoStatement);
-        } catch (PDOException $e) {
-          self::logError($e->getMessage());
-        }
-      }
-   }
+    }
+  }
 } // End class

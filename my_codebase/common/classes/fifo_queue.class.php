@@ -1,4 +1,6 @@
 <?php
+namespace Common\Classes;
+
 /**
  * Filename      : fifo_queue.class.php
  * Date created  : 30/10-2016, Ivan
@@ -24,9 +26,6 @@ class FifoQueue
 {
    private $arrQueueData;
 
-   /**
-    * @return FifoQueue
-    */
    public function __construct() {
       $arrQueueData = array();  
    }
@@ -40,7 +39,7 @@ class FifoQueue
     */
    public static function getInstance() : FifoQueue {
       return new FifoQueue();
-   } // method getInstance
+   }
 
    public function addToQueue($p_record) {
       if (is_array($this->arrQueueData)) {
@@ -48,7 +47,7 @@ class FifoQueue
       } else {
         trigger_error('Pre-condition was not met - The queue is not an array ...', E_USER_ERROR);
       }
-   } // method addToQueue
+   }
 
    /**
     * @return mixed|boolean Returns the next record in the FIFO-queue else it returns boolean FALSE.
@@ -63,17 +62,17 @@ class FifoQueue
       } else {
         return FALSE;
       }
-   } // method getNextInQueue
+   }
 
    /**
     * Returns the number of records in the queue.
     * @return int
     */
-   public function getNumOfRecords() {
+   public function getNumOfRecords() : int {
       if (is_array($this->arrQueueData)) {
         return count($this->arrQueueData);
       } else {
         return 0;
       }
-   } // method getNumOfRecords
+   }
 } // End class

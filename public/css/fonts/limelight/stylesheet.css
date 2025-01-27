@@ -1,0 +1,7 @@
+@font-face {
+    font-family: 'limelightregular';
+    src: url('limelight-regular.woff2') format('woff2'),
+         url('limelight-regular.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}

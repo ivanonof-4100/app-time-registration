@@ -47,6 +47,9 @@ foreach ($_defines as $_errname => $_errvalue) {
 
 class CustomErrorHandler
 {
+  /**
+   * @var $stdErrorHandler
+   */
   private $stdErrorHandler;
 
   /**
@@ -81,7 +84,6 @@ class CustomErrorHandler
 
   /**
    * Default constructor
-   * @return CustomErrorHandler
   */
   public function __construct() {
     // Make sure the PHP error-settings is set.
@@ -133,8 +135,8 @@ class CustomErrorHandler
      return new CustomErrorHandler();
   }
 
-  public function getAppInstance() : StdApp {
-     return StdApp::getInstance();
+  public function getAppInstance(string $p_langIdent ='en') : StdApp {
+     return StdApp::getInstance($p_langIdent);
   }
 
   /**
@@ -148,7 +150,7 @@ class CustomErrorHandler
      return $this->siteLogfile;
   }
 
-  public function setTopLevel_exceptionHandler($p_exceptionObj) : void {
+  public function setTopLevel_exceptionHandler(Exception $p_exceptionObj) : void {
   	  $errorMessage = sprintf("Error: %s", $p_exceptionObj->getMessage());
 	  $arrLastError = error_get_last();
      $this->displayLastError($arrLastError);
@@ -185,8 +187,7 @@ class CustomErrorHandler
 	  // Make sure we still output fatal error headers, catching exception otherwise it will default to status-code 200.
 	  $protocol = (isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.1');
 	  header($protocol .' 500 Internal Server Error');
-     $arrLastError = error_get_last();
-     $this->displayInternalError($arrLastError);
+     $this->displayInternalError(error_get_last());
      exit(1);
   }
 
@@ -209,17 +210,17 @@ class CustomErrorHandler
   }
 
   protected function displayInternalError($p_arrLastError) : void {
-     $errorController = ErrorController::getInstance(APP_LANGUAGE_IDENT, 'utf8', $this->getAppInstance());
-     $errorController->displayErrorPage500($p_arrLastError);
+     $errorController = ErrorController::getInstance('en', 'utf8', $this->getAppInstance());
+     $errorController->displayError_page500($p_arrLastError);
   }
 
   protected function displayLastError($p_arrLastError) : void {
-     $errorController = ErrorController::getInstance(APP_LANGUAGE_IDENT, 'utf8', $this->getAppInstance());
+     $errorController = ErrorController::getInstance('en', 'utf8', $this->getAppInstance());
      $errorController->renderError($p_arrLastError);
   }
 
-  public function displayErrorMessage(string $p_errorMessage ='') : void {
-     $errorController = ErrorController::getInstance(APP_LANGUAGE_IDENT, 'utf8', $this->getAppInstance());
+  public function displayErrorMessage($p_errorMessage) : void {
+     $errorController = ErrorController::getInstance('en', 'utf8', $this->getAppInstance());
      $errorController->renderErrorMessage($p_errorMessage);
   }
 } // End class

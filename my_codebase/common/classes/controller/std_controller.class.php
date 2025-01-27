@@ -2,51 +2,47 @@
 namespace Common\Classes\Controller;
 
 use Exception;
-use Common\Classes\CodebaseRegistry;
-use Common\Classes\CustomSessionHandler;
 use Common\Classes\LanguagefileHandler;
 use Common\Classes\InputHandler;
-use Common\Classes\OutputBuffer;
-use Common\Classes\Db\MySQLDBAbstraction;
 use Common\Classes\StdApp;
+use Common\Classes\CodebaseRegistry;
+use Common\Classes\Db\DBAbstraction;
+use Common\Classes\Db\MySQLDBAbstraction;
+use Common\Classes\Session\FileSessionHandler;
+use Common\Classes\Session\DBSessionHandler;
+use Common\Classes\Helper\CustomToken;
+use Common\Classes\ResponseCode;
 
 /**
  * Filename     : std_controller.class.php
- * Language     : PHP v7.4, v7.2, v5.x
- * Date created : 20/02-2014, Ivan
- * Last modified: 27/12-2020, Ivan
+ * Language     : PHP v7.4
+ * Date created : 20/02-2023, Ivan
+ * Last modified: 24/01-2025, Ivan
  * Developers   : @author Ivan Mark Andersen <ivanonof@gmail.com>
- * @copyright   : Copyright (C) 2014 by Ivan Mark Andersen
+ * @copyright   : Copyright (C) 2025 by Ivan Mark Andersen
  *
  * Description:
- *  My simple standard controller super-class, that every controller-class will inherit from.
- *  @see https://www.php.net/manual/en/reserved.variables.server.php
- *  @see https://www.php.net/manual/en/language.oop5.magic.php
+ * My standard controller super-class, that every controller-class will inherit from.
  */
+
+// Exception related to this class.
+class NoConfigSettingsException extends Exception {};
+class NoDBConnectionSettingsException extends Exception {};
+class RDBMSNotRunningException extends Exception {};
+
 class StdController
 {
-  const DEFAULT_MIME_FILE = '/etc/mime.types';
-
   // Attributes
   protected $codebaseRegistry;
-  protected $inputHandlerObj;
-  protected $languageFileHandlerObj;
-  protected $mimeFileName;
 
   /**
    * Default constructor of the class.
-   *
-   * @param string $p_lang Default 'da'
-   * @param string $p_charset Default 'utf8'
-   * 
-   * @return StdController
+   * @param StdApp $p_appInstance
    */
-  public function __construct(string $p_lang =APP_LANGUAGE_IDENT, string $p_charset =APP_DEFAULT_CHARSET, StdApp $p_appInstance) {
+  public function __construct(StdApp $p_appInstance) {
      $codebaseRegistry = CodebaseRegistry::getInstance();
      $codebaseRegistry->setInstance_appInstance($p_appInstance);
      $this->setInstance_codebaseRegistry($codebaseRegistry);
-     $this->setAttr_inputHandler(InputHandler::getInstance());
-     $this->languageFileHandlerObj = LanguagefileHandler::getInstance(FALSE, $p_lang, $p_charset);
   }
 
   /**
@@ -55,82 +51,66 @@ class StdController
   public function __destruct() {
   }
 
-  /**
-   * @param string $p_fileName
-   * @return void
-   */
-  public function setAttr_mimeFileName(string $p_fileName ='/etc/mime.types') : void {
-     $this->mimeFileName = (string) $p_fileName;
-  }
-
-  public function getAttr_mimeFileName() : string {
-     return $this->mimeFileName;
-  }
-
-  protected function setAttr_inputHandler(InputHandler $p_inputHandler) : void {
-     $this->inputHandlerObj = $p_inputHandler;
-  }
-
-  /**
-   * Retrives the requested parameter in specifyed input-source.
-   *
-   * @param string $p_parameterName
-   * @param string $p_expectedDataType
-   * @param string $p_parameterSource
-   *
-   * @return array
-   */
-  public function retriveInputParameter(string $p_parameterName, string $p_expectedDataType, string $p_parameterSource) {
-    if ($p_parameterSource == '_GET') {
-      return $this->inputHandlerObj->retriveVarFrom_GET($p_parameterName, $p_expectedDataType);
-    }
-    elseif ($p_parameterSource == '_POST') {
-      return $this->inputHandlerObj->retriveVarFrom_POST($p_parameterName, $p_expectedDataType);
-    } else {
-      // Default to _GET as parameter-source.
-      return $this->inputHandlerObj->retriveVarFrom_GET($p_parameterName, $p_expectedDataType);
-    }
-  }
-
-  /**
-   * @param string $p_langIdent  
-   * @param string $p_charset
-   *
-   * @return LanguagefileHandler
-   */
-  public function getInstance_languageFileHandler(string $p_langIdent ='da', string $p_charset ='utf8') : LanguagefileHandler {
-     if (is_object($this->languageFileHandlerObj) && ($this->languageFileHandlerObj instanceof LanguagefileHandler)) {
-       return $this->languageFileHandlerObj;
-     } else {
-       // Lets make one!
-       $this->languageFileHandlerObj = LanguagefileHandler::getInstance(FALSE, $p_langIdent, $p_charset);
-       return $this->languageFileHandlerObj;
-     }
-  }
-
-  /**
-   * @return InputHandler
-   */
-  public function getInstance_inputHandler() : InputHandler {
-     return $this->inputHandlerObj;
+  public static function getInstance(string $p_lang =APP_LANGUAGE_IDENT, string $p_charset =APP_DEFAULT_CHARSET, StdApp $p_appInstance) : StdController {
+    return new StdController($p_appInstance);
   }
 
   /**
    * Redirects the web-browser to the given URL.
    * @param string $p_URL
+   * @param int $p_responseCode
+   * @return void
    */
-  public static function redirectBrowser($p_URL) : void {
+  public static function redirectBrowser(string $p_URL ='', int $p_responseCode = ResponseCode::HTTP_PAGE_NOT_FOUND) : void {
     // If no HTTP-headers are sent, send one
     if (!headers_sent($pbr_filename, $pbr_lineNumber)) {
       // Send a raw HTTP-header.
-      header(sprintf('Location: %s', $p_URL));
+      header(sprintf('Location: %s', $p_URL), TRUE, $p_responseCode);
       exit(0);
     } else {
-      // You would most likely trigger an error here.
+      // This would most likely trigger an error.
       trigger_error(__METHOD__.': Headers was already send', E_USER_WARNING);
+      header('Content-type: text/javascript');
       echo "Headers already sent in $pbr_filename on line $pbr_lineNumber\n" .
            "Cannot redirect, for now please click this <a href=\"http://$p_URL\">Redirect link</a> instead\n";
       exit(1);
+    }
+  }
+
+  /**
+   * Makes sure that the perfered supported language is selected, if none used in the URI.
+   * @return void
+   */
+  public function redirectTo_supportedPreferenceLanguage() : void {
+    $codebaseRegistry = $this->getInstance_codebaseRegistry();
+    $appInstance = $codebaseRegistry->getInstance_appInstance();
+    // if ($appInstance instanceof StdApp) {
+    $arrSettings = $appInstance->getSettings();
+    if (empty($arrSettings['app_lang_supported'])) {
+      // Use the defined default-lanugage for the web-application.
+      if (defined('APP_LANGUAGE_IDENT')) {
+        $uri = sprintf('/%s/', APP_LANGUAGE_IDENT);
+        self::redirectBrowser($uri, ResponseCode::HTTP_TEMPORARY_REDIRECT);
+      } else {
+        // Default language.
+        self::redirectBrowser('/da/', ResponseCode::HTTP_TEMPORARY_REDIRECT);
+      }
+    } else {
+      $perferedLanguageIdent = LanguagefileHandler::getDetectedLanguageOfBrowser();
+      $langEntryIdent = sprintf('lang_%s', $perferedLanguageIdent);
+      if (array_key_exists($langEntryIdent, $arrSettings['app_lang_supported'])) {
+        // Then the perfered language of the browser is supported in the web-application.
+        $uri = sprintf('/%s/', $perferedLanguageIdent);
+        self::redirectBrowser($uri, ResponseCode::HTTP_TEMPORARY_REDIRECT);
+      } else {
+        if (defined('APP_LANGUAGE_IDENT')) {
+          $uri = sprintf('/%s/', APP_LANGUAGE_IDENT);
+          self::redirectBrowser($uri, ResponseCode::HTTP_TEMPORARY_REDIRECT);
+        } else {
+          // Default something.
+          self::redirectBrowser('/en/', ResponseCode::HTTP_TEMPORARY_REDIRECT);
+        }
+      }
     }
   }
 
@@ -148,9 +128,9 @@ class StdController
 
   	 $hostIP = self::getIPaddressOfHost($p_hostName);
   	 if ($hostIP != $p_hostName) {
-       return TRUE; // We are connected!
+       return TRUE;
   	 } else {
-       return FALSE; // We are NOT connected
+       return FALSE;
   	 }
   }
 
@@ -162,30 +142,6 @@ class StdController
    */
   public static function getIPaddressOfHost($p_hostName) : string {
   	 return gethostbyname($p_hostName);
-  }
-
-  /**
-   * Checks if the request-method is GET.
-   * @return bool Returns boolean TRUE if the request-method is using GET otherwise FALSE.
-   */
-  public static function isRequestMethod_GET() : bool {
-     if (isset($_SERVER['REQUEST_METHOD'])) {
-       return ($_SERVER['REQUEST_METHOD'] == 'GET');
-     } else {
-       return FALSE;
-     }
-  }
-
-  /**
-   * Checks if the request-method is POST.
-   * @return bool Returns boolean TRUE if the request-method is using POST otherwise FALSE.
-   */
-  public static function isRequestMethod_POST() : bool {
-     if (isset($_SERVER['REQUEST_METHOD'])) {
-       return ($_SERVER['REQUEST_METHOD'] == 'POST');
-     } else {
-       return FALSE;
-     }
   }
 
   /**
@@ -201,19 +157,6 @@ class StdController
   }
 
   /**
-   * @param string $p_usedToken Default blank.
-   * @return bool Returns boolean TRUE if we have used the correct token.
-   * @throws Exception
-   */
-  public static function isCorrectSecurityToken(string $p_usedToken ='') : bool {
-    if (!defined('APP_SECURITY_TOKEN')) {
-      throw new Exception('The Security Token for the application is NOT defined ...');
-    } else {
-      return ($p_usedToken == APP_SECURITY_TOKEN);
-    }
-  }
-
-  /**
    * Checks if the required PHP-extension is installed or not. 
    *
    * @param string $p_extensionName
@@ -226,6 +169,14 @@ class StdController
   	 } else {
        return TRUE;
 	   }
+  }
+
+  /**
+   * @param string $p_methodName
+   * @return bool
+   */
+  public function hasNamedMethod(string $p_methodName) : bool {
+    return method_exists($this, $p_methodName);
   }
 
   /**
@@ -250,15 +201,15 @@ class StdController
   }
 
   /**
-   * @return mixed CustomSessionHandler OR boolean FALSE on error.
+   * @return mixed
    */
-  public function getInstance_sessionHandler() : mixed {
+  public function getInstance_sessionHandler() {
      $codebaseRegistry = $this->getInstance_codebaseRegistry();
 	   if (is_object($codebaseRegistry) && ($codebaseRegistry instanceof CodebaseRegistry)) {
        return $codebaseRegistry->getInstance_sessionHandler();
 	   } else {
        trigger_error('It was not possible to retrieve the session-handler object ...', E_USER_ERROR);
-	   }  	 
+	   }
   }
 
   public static function getDBFormat_ofDateTime() {
@@ -277,51 +228,118 @@ class StdController
   	 return class_exists($p_className, false);
   }
 
-  public function initDependencies() : void {
-     $codebaseRegistry = $this->getInstance_codebaseRegistry();
-     $appInstance = $codebaseRegistry->getInstance_appInstance();
-     if ($appInstance instanceof StdApp) {
-       // Lets first get the config-settings of the application.
-       $arrSettings = $appInstance->getSettings();
-       if (is_array($arrSettings)) {
-         // Connect to the database, if any defined in the settings.
-         if (array_key_exists('db_connection', $arrSettings)) {
-           $this->initDatabaseConnection($arrSettings['db_connection'], TRUE);
-         }
-       } else {
-          trigger_error(__METHOD__ .': None settings was defined for the application ...', E_USER_ERROR);
-       }
-     } else {
-       trigger_error(__METHOD__ .': The appInstance was not an instance of the expected class ...', E_USER_ERROR);
-       exit(8);
-     }
-
-     // Start session
-     $customSessionHandler = CustomSessionHandler::getInstance();
-     $wasSuccessful = $customSessionHandler->activateSession();
-
-     $codebaseRegistry->setInstance_sessionHandler($customSessionHandler);
-     // Add the session-instance to the super-global session-array.
-     $_SESSION['session_handler'] = $customSessionHandler;
+  /**
+   * Returns an array of the loaded settings from app.conf.json
+   * @return array
+   */
+  public function getLoadedSettings() : array {
+    $codebaseRegistry = $this->getInstance_codebaseRegistry();
+    $appInstance = $codebaseRegistry->getInstance_appInstance();
+    if ($appInstance instanceof StdApp) {
+      return $appInstance->getSettings();
+    } else {
+      trigger_error(__METHOD__ .': The appInstance was not an instance of the expected class ...', E_USER_ERROR);
+    }
   }
 
   /**
    * @param array $p_arrSettings
+   * @param bool $p_isAPIRequest
+   * @throws NoDBConnectionDataException
+   * @throws NoConfigSettingsException
+   * @throws RDBMSNotRunningException
    * @return void
    */
-  public function initDatabaseConnection(array $p_arrSettings, $p_resetEntry =FALSE) : void {
-  	 $codebaseRegistry = $this->getInstance_codebaseRegistry();
-     if ((!$codebaseRegistry->doesEntryExists_dbConnection()) || ($p_resetEntry)) {
-       try {
-         $mySQLDBAbstraction = MySQLDBAbstraction::getInstance($p_arrSettings['host'], $p_arrSettings['dbname'], $p_arrSettings['dbcodepage']);
-         // Connect to the database using PDO-abstraction.
-         $pdoDBConnectionObj = $mySQLDBAbstraction->initDatabaseConnection($p_arrSettings['dbuser'], $p_arrSettings['dbpassword']);
-         // Set entry
-         $codebaseRegistry->setInstance_dbConnection($mySQLDBAbstraction);
-       } catch (Exception $e) {
-         echo $e->getMessage();
-       }
-     }
+  public function initDependencies(array $p_arrSettings, bool $p_isAPIRequest =FALSE) : void {
+    if (is_array($p_arrSettings)) {
+      // Setup database-connection, but first check if RDBMS is running
+      if (!MySQLDBAbstraction::isRDBMSRunning()) {
+        throw new RDBMSNotRunningException('The RDBMS is NOT running!');
+      } else {
+        if (array_key_exists('db_connection', $p_arrSettings)) {
+          // Use the configuration to connect to the database.
+          $dbAbstraction = $this->setupDatabaseConnection($p_arrSettings['db_connection'], TRUE);
+        } else {
+          throw new NoDBConnectionSettingsException('There was NOT specifyed any settings to connect to the database in the JSON config-file app.conf.json');
+        }
+      }
+
+      if ($p_isAPIRequest === FALSE) {
+        // Setup and start the session.
+        if (array_key_exists('session', $p_arrSettings)) {
+          $this->setupSession($p_arrSettings['session'], $dbAbstraction);
+        } else {
+          throw new Exception('There was NOT any settings for session-configuration in the JSON config-file app.conf.json');
+        }
+      }
+    } else {
+      throw new NoConfigSettingsException('No settings was defined for the application in the config-file app.conf.json');
+    }
+  }
+
+  /**
+   * @param array $p_arrSettings
+   * @return DBAbstraction
+   */
+  public function setupDatabaseConnection(array $p_arrSettings, $p_resetEntry =FALSE) : DBAbstraction {
+    $mySQLDBAbstraction = MySQLDBAbstraction::getInstance($p_arrSettings['host'], $p_arrSettings['dbname'], $p_arrSettings['dbcodepage']);
+    if ($mySQLDBAbstraction instanceof DBAbstraction) {
+      // Connect to the database using PDO-abstraction.
+      $mySQLDBAbstraction->initDatabaseConnection($p_arrSettings['dbuser'], $p_arrSettings['dbpassword']);
+
+      // Set entry
+      $codebaseRegistry = $this->getInstance_codebaseRegistry();
+      $codebaseRegistry->setInstance_dbConnection($mySQLDBAbstraction);
+      return $mySQLDBAbstraction;
+    }
+  }
+
+  /**
+   * @param array $p_arrSettings
+   */
+  public function setupSession(array $p_arrSettings, DBAbstraction $p_dbAbstraction) {
+    $inputHandler = InputHandler::getInstance();
+    $arrInputParam_resumeSessId = $inputHandler->retriveInputParameter('_resume_sid', InputHandler::ACCEPTED_DATATYPE_STR, InputHandler::INPUT_SOURCE_POST);
+    // Setup and start the session.
+    if (isset($p_arrSettings['driver']) && ($p_arrSettings['driver'] == 'db')) {
+      // Use the database-based session-handler.
+      DBSessionHandler::setupSession($p_arrSettings['expire_secs']);
+      $sessionHandler = DBSessionHandler::getInstance($p_dbAbstraction, $p_arrSettings['expire_secs']);
+      session_set_save_handler($sessionHandler, TRUE);
+    } elseif (isset($p_arrSettings['driver']) && ($p_arrSettings['driver'] == 'file')) {
+      if (isset($p_arrSettings['expire_secs'])) {
+        FileSessionHandler::setupSession($p_arrSettings['expire_secs']);
+        $sessionHandler = FileSessionHandler::getInstance($p_arrSettings['expire_secs']);
+      } else {
+        // Default something for session.
+        FileSessionHandler::setupSession(FileSessionHandler::SESS_LIFETIME_DEFAULT);
+        $sessionHandler = FileSessionHandler::getInstance();
+      }
+    }
+
+    // Start session
+    if ($arrInputParam_resumeSessId['is_set'] && $arrInputParam_resumeSessId['is_valid']) {
+      // Resume to the session-id that was given.
+      // $wasSuccessful = $sessionHandler->start($arrInputParam_resumeSessId['value']);
+      $sessionHandler->startWithRegeneration($p_arrSettings['expire_secs']);
+    } else {
+      if (isset($p_arrSettings['expire_secs'])) {
+        $sessionHandler->startWithRegeneration($p_arrSettings['expire_secs']);
+      } else {
+        $sessionHandler->startWithRegeneration();
+      }
+    }
+
+    // Make sure that the security-token is set in session.
+    if (!isset($_SESSION['security_token'])) {
+      // Generate a Security Token
+      $customToken = CustomToken::getInstance();
+      $sessionHandler->set('security_token', $customToken->getToken());
+    }
+
+    // Add the session-handler to the registry
+    $codebaseRegistry = $this->getInstance_codebaseRegistry();
+    $codebaseRegistry->setInstance_sessionHandler($sessionHandler);
   }
 
   /**
@@ -330,16 +348,15 @@ class StdController
    */
   public function setAppInstance(StdApp $p_appInstance) : void {
     $codebaseRegistry = $this->getInstance_codebaseRegistry();
-    if (($codebaseRegistry)) {
-      try {
-        // Set entry
-        $codebaseRegistry->setInstance_appInstance($p_appInstance);
-      } catch (Exception $e) {
-        echo $e->getMessage();
-      }
+    if ($codebaseRegistry) {
+      // Set entry
+      $codebaseRegistry->setInstance_appInstance($p_appInstance);
     }
   }
 
+  /**
+   * @return StdApp
+   */
   public function getAppInstance() : StdApp {
     $codebaseRegistry = $this->getInstance_codebaseRegistry();
     if (($codebaseRegistry)) {
@@ -350,38 +367,5 @@ class StdController
         echo $e->getMessage();
       }
     }
-  }
-
- /**
-  * Returns an associative-array containing all MIME-types based on the Apache mime.types file.
-  * @return array
-  */
-  public static function getMIMETypes($p_fileMIMETypes = self::DEFAULT_MIME_FILE) {
-     $regex = "/([\w\+\-\.\/]+)\t+([\w\s]+)/i";
-     $lines = file($p_fileMIMETypes, FILE_IGNORE_NEW_LINES);
-     foreach($lines as $line) {
-        if (substr($line, 0, 1) == '#') continue; // skip comments
-        if (!preg_match($regex, $line, $matches)) continue; // skip mime types w/o any extensions
-        $mime = $matches[1];
-        $extensions = explode(" ", $matches[2]);
-        foreach($extensions as $ext) {
-           $mimeArray[trim($ext)] = $mime;
-        } // Each match
-     } // Each MIME-line
-
-     return $mimeArray;
-  }
-
-  /**
-   * @return string|boolean Returns a string of the MIME-type, if not found boolean FALSE.
-   */
-  public static function getMIMEType_ofFile($p_fileName) : string {
-     $arrFilenameParts = pathinfo($p_fileName);
-     $arrMIMETypes = self::getMIMETypes(self::DEFAULT_MIME_FILE);
-     if (array_key_exists($arrFilenameParts['extension'], $arrMIMETypes)) {
-       return $arrMIMETypes[$arrFilenameParts['extension']];
-     } else {
-       return FALSE;
-     }
   }
 } // End class

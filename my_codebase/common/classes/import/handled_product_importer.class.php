@@ -1,6 +1,11 @@
 <?php
+namespace Common\Classes\Import;
+use Exception;
+use Common\Classes\Import\CSVFileImporter;
+use Common\Classes\Model\HandledProduct;
+
 /**
- * Script-name  : csv_file_importer.class.php
+ * Filename  : handled_product_importer.class.php
  * Language     : PHP v7.x
  * Author(s)    : @author IMA, Ivan Mark Andersen <ivanonof@gmail.com>
  * Date created : IMA, 06/09-2016
@@ -8,44 +13,36 @@
  * 
  * @copyright Copyright (C) 2016 by Ivan Mark Andersen
  *
- * Description
- *  Wraps handling of import of CSV-files - Comma-Seperated-Values (CVS).
- *  Remember that, if the MySQL-server is setup with the 'secure-file-priv',
- *  Then the csv-files need to be in a special directory for MySQL to be able
- *  to read the csv-file. Where that place is you can look up using the SQL
- *  below.
+ * DESCRIPTION:
+ * Wraps handling of import of CSV-files - Comma-Seperated-Values (CVS).
+ * Remember that, if the MySQL-server is setup with the 'secure-file-priv',
+ * Then the csv-files need to be in a special directory for MySQL to be able
+ * to read the csv-file. Where that place is you can look up using the SQL below.
  *
- *  select @@GLOBAL.secure_file_priv AS SECURE_LOCATION;
+ * select @@GLOBAL.secure_file_priv AS SECURE_LOCATION;
  *
  * @example:
- *  // Import the CSV-file.
- *  $importFile = PATH_IMPORT_FILES .'Product.csv';
- *  $csvFileImporterObj = CSVFileImporter::getInstance($importFile, ';');
- *  $csvFileImporterObj->importFile_loadIntoDBTable($baseTable, $dbPDOConnection);
- *  $wasSuccessful = $csvFileImporterObj->importFile();
+ * // Import the CSV-file.
+ * $importFile = PATH_IMPORT_FILES .'Product.csv';
+ * $csvFileImporter = CSVFileImporter::getInstance($importFile, ';');
+ * $csvFileImporter->importFile_loadIntoDBTable($baseTable, $dbPDOConnection);
+ * $wasSuccessful = $csvFileImporter->importFile();
 */
-require_once PATH_COMMON_IMPORT .'csv_file_importer.class.php';
-require_once PATH_COMMON_MODEL .'handled_product.class.php';
 
 class HandledProductImporter extends CSVFileImporter /* implements  */
-{
-   private $importedRecord;
+{ 
+  private $importedRecord;
  
    /**
     * @param string $p_importFile
     * @param string $p_valueDelimiter Default ','.
-    * @param StdController $p_ctrlObj
-    *
-    * @return HandledProductImporter
     */
-   public function __construct($p_importFile, $p_valueDelimiter =',')
-   {
+   public function __construct($p_importFile, $p_valueDelimiter =',') {
       parent::__construct($p_importFile, $p_valueDelimiter);
-   } // method __construct
+   }
 
-   public function __destruct()
-   {
-     parent::__destruct();
+   public function __destruct() {
+      parent::__destruct();
    }
 
    /**
@@ -54,10 +51,9 @@ class HandledProductImporter extends CSVFileImporter /* implements  */
     *
     * @return HandledProductImporter
     */
-   public static function getInstance($p_importFile, $p_valueDelimiter =',')
-   {
+   public static function getInstance($p_importFile, $p_valueDelimiter =',') : HandledProductImporter {
       return new HandledProductImporter($p_importFile, $p_valueDelimiter);
-   } // method getInstance
+   }
 
    /**
     * @param StdController $p_ctrlObj
@@ -116,12 +112,10 @@ class HandledProductImporter extends CSVFileImporter /* implements  */
         $handledProductObj->setAttr_user_id_created($p_arrImportedRecord['user_id_created']);
       } else {
         // Default something.
-        $handledProductObj->setAttr_user_id_created(2); // Kim Jensen
+        $handledProductObj->setAttr_user_id_created(2); // Test user
       }
 
       $arrToSave[] = $handledProductObj;
       return $handledProductObj->save($arrToSave, FALSE, $p_ctrlObj);
-   } // method saveImportedRecord
-
+   }
 } // End class
-?>

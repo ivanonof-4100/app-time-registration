@@ -1,0 +1,10 @@
+{
+    "routes": {
+        "/da/": {
+            "route_allowed_methods": "HEAD,GET,POST",
+            "route_controller_class": "TimesheetController",
+            "route_controller_method": "handleWeeklyTimesheets",
+            "route_class_namespace": "App\\Modules\\Timesheets\\Classes\\Controller"
+        }
+    }
+}

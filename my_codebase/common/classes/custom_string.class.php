@@ -3,38 +3,40 @@ namespace Common\Classes;
 
 /**
  * Filename     : custom_string.class.php
- * Language     : PHP v7.4, v7.1, v5.x
+ * Language     : PHP v7.4
  * Date created : 30/09-2013, Ivan
- * Last modified: 02/09-2016, Ivan
+ * Last modified: 24/01-2024, Ivan
  * Developers   : @author Ivan Mark Andersen <ivanonof@gmail.com>
  *
  * Description
  *  My string-wrapper class for handling strings in a smart and a multi-byte safe manner.
  *   
  *  @example 1:
- *   $strObj = CustomString::getInstance('Hello world ;-)', 'UTF-8');
- *   $strObj->addToContent(' Cool!');
+ *  $strObj = CustomString::getInstance('Hello world ;-)', 'UTF-8');
+ *  $strObj->addToContent(' Cool!');
  *
- *   echo $strObj->getUppercase(); // Displays: HELLO WORLD :-) COOL!
- *   echo $strObj->getLowercase(); // Displays: hello world :-) cool!
- *   echo $strObj->getAttr_str();  // Displays: Hello world ;-) Cool!
+ *  echo $strObj->getUppercase(); // Displays: HELLO WORLD :-) COOL!
+ *  echo $strObj->getLowercase(); // Displays: hello world :-) cool!
+ *  echo $strObj->getAttr_str();  // Displays: Hello world ;-) Cool!
  *
- *   // Modify to all-uppercase letters.
- *   $strObj->toUppercase();
- *   $searchStr = 'WORLD';
- *   if ($strObj->doesOccur($searchStr)) {
- *     // Yes, there was at least one!
- *     echo sprintf("There was at least one occurrence of the string '%s'.", $searchStr);
- *   } else {
- *     echo sprintf("No there was no occurrence of the string '%s'.", $searchStr);
- *   }
+ *  // Modify to all-uppercase letters.
+ *  $strObj->toUppercase();
+ *  $searchStr = 'WORLD';
+ *  if ($strObj->doesOccur($searchStr)) {
+ *    // Yes, there was at least one!
+ *    echo sprintf("There was at least one occurrence of the string '%s'.", $searchStr);
+ *  } else {
+ *    echo sprintf("No there was no occurrence of the string '%s'.", $searchStr);
+ *  }
  * 
  *  @example 2:
- *   $strObj_columnsList = CustomString::getInstance("USR_NAME,USR_PASSWD,USR_EMAIL", 'UTF-8');
- *   $arrFields = $strObj_columnsList->getSubStrings(',');
+ *  $strObj_columnsList = CustomString::getInstance("USR_NAME,USR_PASSWD,USR_EMAIL", 'UTF-8');
+ *  $arrFields = $strObj_columnsList->getSubStrings(',');
  */
 class CustomString
 {
+  const UTF8_ENCODING ='UTF-8';
+
   // Attributes
   private $str;
   private $str_encoding;
@@ -42,26 +44,27 @@ class CustomString
   /**
    * Default constructor.
    *
-   * @param string $p_strInitialValue Default blank.
+   * @param string $p_str Default blank.
    * @param string $p_strEncoding Default 'UTF-8'
    * 
    * @return CustomString
    */  
-  public function __construct($p_strInitialValue ='', $p_strEncoding ='UTF-8') {
+  public function __construct($p_str ='', $p_strEncoding =self::UTF8_ENCODING) {
     // Set string-encoding before setting the actual value.
     $this->setAttr_str_encoding($p_strEncoding);
-    $this->setAttr_str($p_strInitialValue);
+    $this->setAttr_str($p_str);
   }
 
   public function __destruct() {
   }
 
   public function __clone() {
-  	 /* 
-  	  * There is no reference-variable in the class,
-  	  * So there is no need to force the creation of copies of those. 
-  	  */
-  	 // $this->object = clone $this->object;
+  	/* 
+  	 * There is no reference-variable in the class,
+  	 * So there is no need to force the creation of copies of those. 
+  	 */
+  	$this->str = clone $this->str;
+    $this->str_encoding = clone $this->str_encoding;
   }
 
   /**
@@ -73,26 +76,24 @@ class CustomString
 
   /**
    * Creates a new instance of the class.
-   * 
+   * @param string $p_str Default blank.
    * @param string $p_strEncoding
-   * @param string $p_strInitialValue Default blank.
-   *
    * @return CustomString
    */
-  public static function getInstance($p_strInitialValue ='', $p_strEncoding ='UTF-8') : CustomString {
-  	 return new CustomString($p_strInitialValue, $p_strEncoding);
+  public static function getInstance(string $p_str ='', string $p_strEncoding =self::UTF8_ENCODING) : CustomString {
+  	return new CustomString($p_str, $p_strEncoding);
   }
 
   // Setter and getter methods.
 
   /**
    * Sets the encoding of the string of the instance.
-   * @param string $p_strEncoding Default is 'UTF-8'.
+   * @param string $p_strEncoding Default 'UTF-8'.
    */
-  protected function setAttr_str_encoding(string $p_strEncoding ='UTF-8') : void {
+  protected function setAttr_str_encoding(string $p_strEncoding =self::UTF8_ENCODING) : void {
   	 // Make sure that only supported encoding can be used.
   	 if (!self::isEncodingSupported($p_strEncoding)) {
-       trigger_error("Specified character-encoding ('". $p_strEncoding ."') is NOT supported ...", E_USER_ERROR);
+       trigger_error(__METHOD__ .": Specified string character-encoding ('". $p_strEncoding ."') is NOT supported ...", E_USER_ERROR);
   	 } else {
   	   $this->str_encoding = (string) $p_strEncoding;
   	 }
@@ -107,13 +108,13 @@ class CustomString
   }
  
   /**
-   * @param string $p_strValue Default value is blank.
+   * @param string $p_str Default value is blank.
    */
-  public function setAttr_str(string $p_strValue ='') : void {
-     if ($this->hasValidEncoding($p_strValue)) {
-       $this->str = (string) $p_strValue;
+  public function setAttr_str(string $p_str ='') : void {
+     if ($this->hasValidEncoding($p_str)) {
+       $this->str = (string) $p_str;
   	 } else {
-       $this->str = (string) mb_convert_encoding($p_strValue, $this->getAttr_str_encoding());
+       $this->str = (string) mb_convert_encoding($p_str, $this->getAttr_str_encoding());
   	 }
   }
 
@@ -121,26 +122,25 @@ class CustomString
    * @return string
    */
   public function getAttr_str() : string {
-  	 return $this->str;
+  	return $this->str;
   }
 
   // Service methods
 
   public function clear() : void {
-     $this->setAttr_str('');
+    $this->setAttr_str('');
   }
 
   /**
    * @param string $p_str Default blank.
    */
-  public function addToContent($p_str ='') : void {
+  public function addToContent(string $p_str ='') : void {
      $strObj_addingPart = self::getInstance($this->getAttr_str_encoding(), $p_str);
      $this->toConcatenatedString($strObj_addingPart);
   }
 
   /**
    * Check if the string is valid for the specified encoding.
-   * 
    * @param string $p_str
    * @return bool
    */
@@ -150,11 +150,10 @@ class CustomString
 
   /**
    * Gets the length of the multi-byte string counted in number of characters.
-   *
    * @param string $p_str
    * @return int Returns the number of characters in the given string.
    */
-  public function getStringLength($p_str) : int {
+  public function getStringLength(string $p_str) : int {
   	 return mb_strlen($p_str, $this->getAttr_str_encoding());
   }
 
@@ -171,7 +170,7 @@ class CustomString
    * @param boolean $p_doTrim Default TRUE.
    * @return bool TRUE if its blank otherwise FALSE.
    */
-  public function isBlank($p_doTrim =TRUE) : bool {
+  public function isBlank(bool $p_doTrim =TRUE) : bool {
      if ($p_doTrim) {
        return (self::getTrimedWhitespaces($this->getAttr_str()) == '');
      } else {
@@ -181,42 +180,41 @@ class CustomString
 
   /**
    * Checks if there are any occurences of a given string within the string of the instance.
-   * 
    * @param string $p_searchStr
-   * @return int|boolean Returns position of the first occurence, otherwise boolean FALSE.
+   * @return bool Returns position of the first occurence, otherwise boolean FALSE.
    */
-  public function doesOccur($p_searchStr) {
-     return $this->getPosition_firstOccurrence($p_searchStr);
+  public function doesOccur(string $p_searchStr) : bool {
+     if ($this->getPosition_firstOccurrence($p_searchStr) === FALSE) {
+       return FALSE;
+     } else {
+       return TRUE;
+     }
   }
 
   /**
    * Locates where the first occurrence of the given string is at.
-   *  
    * @param string $p_searchStr
    * @param int $p_startOffset Default is zero.
-   * 
    * @return int|boolean Returns boolean FALSE if there was not found any occurrence of the search-string otherwish it will return the character's position.
    */
-  public function getPosition_firstOccurrence(string $p_searchStr, int $p_startOffset =0) {
+  public function getPosition_firstOccurrence(string $p_searchStr ='', int $p_startOffset =0) {
   	 /*
   	  * Performs a multi-byte safe strpos() operation based on number of characters.
   	  * The first character's position is 0, the second character position is 1, and so on.
   	  */
-  	 return mb_strpos($this->getAttr_str(), $p_searchStr, $p_startOffset, $this->getAttr_str_encoding()); 
+     return mb_strpos($this->str, $p_searchStr, $p_startOffset, $this->str_encoding);
   }
 
   /**
    * Locates where the last occurrence of the given string is at.
-   *
    * @param string $p_searchStr
    * @param int $p_startOffset Default is zero.
-   *
    * @return int|boolean Returns boolean FALSE if there was not found any occurrence of the search-string otherwish it will return the character's position.
    */
   public function getPosition_lastOccurrence(string $p_searchStr, int $p_startOffset =0) {
   	/*
   	 * Performs a multi-byte safe strrpos() operation based on number of characters.
-    * The first character's position is 0, the second character position is 1, and so on.
+     * The first character's position is 0, the second character position is 1, and so on.
   	 */
   	 return mb_strrpos($this->getAttr_str(), $p_searchStr, $p_startOffset, $this->getAttr_str_encoding()); 
   }
@@ -227,7 +225,6 @@ class CustomString
    * @param string $p_str
    * @param int $p_startPos Default 0.
    * @param int $p_length Default 0.
-   *
    * @return string
    */
   public function getSubString(string $p_str, int $p_startPos =0, int $p_length =0) : string {
@@ -239,7 +236,7 @@ class CustomString
   	 return mb_substr($p_str, $p_startPos, $p_length, $this->getAttr_str_encoding());
   }
 
-  public function getSubString_truncatedAtLength($p_length =0) : string {
+  public function getSubString_truncatedAtLength(int $p_length =0) : string {
     $str = $this->getAttr_str();
     return mb_strcut($str, 0, $p_length, $this->getAttr_str_encoding());
   }
@@ -247,7 +244,7 @@ class CustomString
   /**
    * @return string
    */
-  private static function getUppercaseOfStringObj(CustomString $p_stringObj) {
+  private static function getUppercaseOfStringObj(CustomString $p_stringObj) : string {
      return mb_strtoupper($p_stringObj->getAttr_str(), $p_stringObj->getAttr_str_encoding());
   }
 
@@ -270,7 +267,6 @@ class CustomString
 
   /**
    * Returns the UPPERCASE version of the given string.
-   *
    * @param string $p_str
    * @return string
    */
@@ -303,17 +299,18 @@ class CustomString
   }
 
   /**
+   * @param CustomString $p_stringObj
    * @return string
    */
   private static function getLowercaseOfStringObj(CustomString $p_stringObj) : string {
-     return mb_strtolower($p_stringObj->getAttr_str(), $p_stringObj->getAttr_str_encoding());
+    return mb_strtolower($p_stringObj->getAttr_str(), $p_stringObj->getAttr_str_encoding());
   }
 
   /**
    * @return string
    */
   public function getLowercase() : string {
-     return self::getLowercaseOfStringObj($this);
+    return self::getLowercaseOfStringObj($this);
   }
  
   /**
@@ -345,7 +342,7 @@ class CustomString
    * @return void
    */
   public function toTrimmedWhitespaces() : void {
-  	 $this->setAttr_str(self::getTrimedWhitespaces($this->getAttr_str()));
+  	$this->setAttr_str(self::getTrimedWhitespaces($this->getAttr_str()));
   }
 
   /**
@@ -392,11 +389,11 @@ class CustomString
    * This function splits a multi-byte-string into an array of strings.
    *
    * @param string $p_splitDelimitor
-   * @return array[] = string
+   * @return array
    */
-  public function getSplitResult($p_splitDelimitor =',') {
-  	 $splitPattern = sprintf("\%s", $p_splitDelimitor);
-  	 return mb_split($splitPattern, $this->getAttr_str());
+  public function getSplitResult($p_splitDelimitor =',') : array {
+  	$splitPattern = sprintf("\%s", $p_splitDelimitor);
+  	return mb_split($splitPattern, $this->getAttr_str());
   }
 
   /**
@@ -410,7 +407,7 @@ class CustomString
    	 if (is_array($arrStr)) {
        $arrSubStrings = array();
        foreach ($arrStr as $curStrPart) {
-          $arrSubStrings[] = self::getInstance($this->getAttr_str_encoding(), $curStrPart);
+          $arrSubStrings[] = self::getInstance($curStrPart, $this->getAttr_str_encoding());
        } // Each sub-string
 
        return $arrSubStrings;
@@ -424,10 +421,9 @@ class CustomString
    * 
    * @param string $p_str1 Default blank.
    * @param string $p_str2 Default blank.
-   * 
    * @return string
    */
-  private static function concatenateStrings(string $p_str1 ='', string $p_str2 ='') : string {
+  public static function concatenateStrings(string $p_str1 ='', string $p_str2 ='') : string {
      return $p_str1 . $p_str2;
   }
 
@@ -496,7 +492,6 @@ class CustomString
        trigger_error('Sorry, there was none supported string-encodings ...', E_USER_ERROR);
        return FALSE;
   	  } else {
-       // Checks if the value exists in the array 
        return in_array($p_strEncoding, $arrSupportedEncodings);
      }
   }

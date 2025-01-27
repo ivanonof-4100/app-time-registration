@@ -1,7 +1,12 @@
 <?php
+namespace Common\Classes;
+
+use DateTime;
+use DateTimeZone;
+
 /**
- * Script-name  : debug_message.class.php 
- * Language     : PHP v5.x
+ * Filename  : debug_message.class.php 
+ * Language     : PHP v7.x
  * Date created : IMA, 19/11-2012
  * Last modified: IMA, 19/11-2012
  * Author(s)    : @author IMA, Ivan Mark Andersen <ivanonof@gmail.com>
@@ -10,7 +15,7 @@
  *
  * Description
  *
- *  @example
+ * @example
  *  
 */
 class DebugMessage
@@ -51,10 +56,10 @@ class DebugMessage
       $this->setAttr_debug_datetime($dateTimeObj->format('Y-m-d H:i:s'));
 */
       $this->setAttr_debug_datetime(new DateTime('now', new DateTimeZone(date_default_timezone_get())));  
-   } // method __construct
+   }
 
    public function __destruct() {
-   } // method __destruct
+   }
 
    /**
     * Sets the debug-text attribute of the instance.
@@ -62,43 +67,43 @@ class DebugMessage
     */
    protected function setAttr_debug_text($p_debugText ='') {
       $this->debug_text = (string) $p_debugText;
-   } // method setAttr_debug_text
+   }
 
    /**
     * @return string
     */
    public function getAttr_debug_text() {
       return $this->debug_text;
-   } // method getAttr_debug_text
+   }
 
    /**
     * @param DateTime $p_debugTime
     */
    protected function setAttr_debug_datetime(DateTime $p_debugTime) {
       $this->debug_datetime = $p_debugTime;
-   } // method setAttr_datetime
+   }
 
    /**
     * @return DateTime
     */
    public function getAttr_debug_datetime() {
       return $this->debug_datetime;
-   } // method getAttr_debug_datetime
+   }
 
    /**
     * Sets the value of the attribute of the debug_filename of the instance. 
     * @param string $p_filename Default blank.
     */
-   protected function setAttr_debug_filename($p_filename ='') {
+   protected function setAttr_debug_filename(string $p_filename ='') : void {
      $this->debug_filename = (string) $p_filename;
-   } // method setAttr_debug_filename
+   }
 
    /**
     * @return string
     */
-   public function getAttr_debug_filename() {
-      return $this->debug_filename;     
-   } // method getAttr_debug_filename
+   public function getAttr_debug_filename() : string {
+      return $this->debug_filename;
+   }
 
    /**
     * @param int|boolean $p_linenumber Default boolean FALSE.
@@ -109,12 +114,12 @@ class DebugMessage
       } else {
         $this->debug_linenumber = (boolean) false;
       }
-   } // method setAttr_debug_linenumber
+   }
 
    /**
-    * @return int|boolean
+    * @return int
     */
-   public function getAttr_debug_linenumber() {
+   public function getAttr_debug_linenumber() : int {
       return $this->debug_linenumber;
-   } // method getAttr_debug_linenumber
+   }
 } // End class

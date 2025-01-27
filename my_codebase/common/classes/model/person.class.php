@@ -6,7 +6,7 @@ use Common\Classes\Datetime\CustomDateTime;
 
 /** 
  * Filename     : person.class.php
- * Language     : PHP v5.x
+ * Language     : PHP v7.x
  * Date created : 11/02-2012, Ivan
  * Last modified: 09/11-2012, Ivan
  * Developers   : @author Ivan Mark Andersen <ivanonof@gmail.com>
@@ -39,7 +39,7 @@ abstract class Person extends StdModel
   /**
    * Default Constructor
    * 
-   * @param string $p_humanGender Default FALSE
+   * @param string $p_humanGender Default 'M'
    * @param string|bool $p_firstName Default FALSE
    * @param string|bool $p_middleName Default FALSE
    * @param string|bool $p_lastName Default FALSE
@@ -47,8 +47,8 @@ abstract class Person extends StdModel
    * 
    * @return Person
    */
-  public function __construct($p_humanGender =FALSE, $p_firstName =FALSE, $p_middleName =FALSE, $p_lastName =FALSE, $p_dateOfBirth ='') {
-     $this->parent::__construct();
+  public function __construct(string $p_humanGender =self::HUMAN_GENDER_MALE, $p_firstName =FALSE, $p_middleName =FALSE, $p_lastName =FALSE, $p_dateOfBirth ='') {
+     parent::__construct();
 
      // First-name
      if ($p_firstName) {
@@ -89,13 +89,20 @@ abstract class Person extends StdModel
      parent::__destruct();
   }
 
+  /**
+   * @return string
+   */
+  public function __toString() : string {
+     return sprintf("%s : %s", $this->getAttr_person_human_gender(), $this->getFullName());
+  }
+
   // Getter and setter methods
 
   /**
    * Sets the attribute of the first-name of the instance.
    * @param string $p_firstName Default blank
    */
-  protected function setAttr_person_first_name($p_firstName ='') {
+  protected function setAttr_person_first_name($p_firstName ='') : void {
      $this->person_first_name = (string) ucfirst(trim($p_firstName));
   }
 
@@ -140,9 +147,20 @@ abstract class Person extends StdModel
   }
 
   /**
+   * @return string
+   */
+  public function getFullName() : string {
+      if ($this->hasMiddleName()) {
+        return printf('%s %s %s', $this->getAttr_person_first_name(), $this->getAttr_person_middle_name(), $this->getAttr_person_last_name());
+      } else {
+        return printf('%s %s', $this->getAttr_person_first_name(), $this->getAttr_person_last_name());
+      }
+  }
+
+  /**
    * Sets the date of birth of the person of the instance.
    */
-  protected function setAttr_person_birthday($p_dateOfBirth ='') {
+  protected function setAttr_person_birthday($p_dateOfBirth ='') : void {
      $this->person_birthday = (string) $p_dateOfBirth;
   }
 
@@ -204,19 +222,6 @@ abstract class Person extends StdModel
   }
 
   /**
-   * Returns the full-name of the person of the instance.
-   * @return string
-   */
-  public function getFullName() : string {
-     // Everybody does not have a middle-name.
-     if ($this->hasMiddleName()) {
-       return sprintf('%s %s %s', $this->getAttr_person_first_name(), $this->getAttr_person_middle_name(), $this->getAttr_person_last_name());
-     } else {
-       return sprintf('%s %s', $this->getAttr_person_first_name(), $this->getAttr_person_last_name());
-     }
-  }
-
-  /**
    * Returns the date of birth of the person of the instance.
    * @return string Like '1973-10-15'
    */
@@ -228,7 +233,7 @@ abstract class Person extends StdModel
    * Returns the calculated current age of the person of the instance.
    * @return int
    */
-  public function getCurrentAge() {
+  public function getCurrentAge() : int {
      // Calculate the age of the person.
      $arrDiffResult = CustomDateTime::calcDateDiff($this->getAttr_person_birthday());
      if (is_array($arrDiffResult)) {
@@ -236,7 +241,6 @@ abstract class Person extends StdModel
          $currentAge = (int) $arrDiffResult['years'];
        } else {
          $currentAge = (int) 0;
-         trigger_error(__METHOD__ .': There was no key-entry with the lable years in the array ...', E_USER_WARNING);
        }
      } else {
        $currentAge = (int) 0;

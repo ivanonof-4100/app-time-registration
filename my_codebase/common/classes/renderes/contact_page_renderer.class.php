@@ -1,10 +1,10 @@
 <?php
 namespace Common\Classes\Renderes;
 
-use Common\Classes\Renderes\
+use Common\Classes\Renderes\StdRenderer;
 
 /**
- * Script-name  : page_renderer.class.php
+ * Filename     : page_renderer.class.php
  * Language     : PHP v7.x
  * Date created : IMA, 15/08-2016
  * Last modified: IMA, 15/08-2016
@@ -12,10 +12,9 @@ use Common\Classes\Renderes\
  *
  * @copyright Copyright (C) 2016 by Ivan Mark Andersen
  *
- * Description
- *  Rendering of pages.
+ * Description:
+ * Rendering of contact-pages.
  */
-require_once(PATH_COMMON_RENDERS .'std_renderer.class.php');
 
 class ContactPageRenderer extends StdRenderer
 {
@@ -28,7 +27,7 @@ class ContactPageRenderer extends StdRenderer
   public function __construct($p_languageFileHandlerObj, $p_isPrintPage =false)
   {
      parent::__construct($p_languageFileHandlerObj, $p_isPrintPage);
-  } // method constructor
+  }
 
   public function __destruct()
   {

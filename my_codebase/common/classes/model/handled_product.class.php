@@ -1,19 +1,24 @@
 <?php
+namespace Common\Classes\Model;
+use Common\Classes\Model\StdModel;
+use Common\Classes\Model\SaveableObjectInterface;
+use DateTime;
+use PDO;
+use PDOException;
+use Exception;
+
 /** 
  * Filename     : handled_product.class.php
  * Language     : PHP v7+
  * Date created : 19/01-2017, Ivan
  * Last modified: 23/01-2017, Ivan
- * Developers   : @author Ivan Mark Andersen <ima@dectel.dk>
+ * Developers   : @author Ivan Mark Andersen <ivanonof@gmail.com>
  *
  * @copyright Copyright (C) 2017 by Ivan Mark Andersen
  * 
- * Description:
- *  Model-class for handling handled-products entries.
+ * DESCRIPTION:
+ * Model-class for handling handled-products entries.
  */
-require_once(PATH_COMMON_MODEL .'saveable_object.interface.php');
-require_once(PATH_COMMON_MODEL .'std_model.class.php');
-
 class HandledProduct extends StdModel implements SaveableObjectInterface
 {
   const PRODUCT_DEMO_YES = 'Y';
@@ -123,106 +128,93 @@ class HandledProduct extends StdModel implements SaveableObjectInterface
   /**
    * @param int $p_handlingId Default 0.
    */
-  private function setAttr_handling_id($p_handlingId =0)
-  {
-     $this->handling_id = (int) $p_handlingId;
-  } // method setAttr_handling_id
+  private function setAttr_handling_id(int $p_handlingId =0) : void {
+    $this->handling_id = (int) $p_handlingId;
+  }
 
   /**
    * @return int
    */
-  public function getAttr_handling_id()
-  {
-     return $this->handling_id;
-  } // method getAttr_handling_id
+  public function getAttr_handling_id() : int {
+    return $this->handling_id;
+  }
 
   /**
    * @return int
    */
-  public function getId()
-  {
-     return $this->getAttr_handling_id();
-  } // method getId
+  public function getId() : int {
+    return $this->getAttr_handling_id();
+  }
 
   /**
    * Sets the attribute of the handling_type.
    * @param int $p_handlingType.  1: 'Sold product', 2: 'Serviced product'.
    */
-  public function setAttr_handling_type($p_handlingType =1)
-  {
-      $this->handling_type = (int) $p_handlingType;
-  } // method setAttr_handling_type
+  public function setAttr_handling_type($p_handlingType =1) : void {
+    $this->handling_type = (int) $p_handlingType;
+  }
 
   /**
    * Returns the value of the attribute of handling_type of the instance.
    * @return int
    */
-  public function getAttr_handling_type()
-  {
-      return $this->handling_type;
-  } // method getAttr_handling_type
+  public function getAttr_handling_type() {
+    return $this->handling_type;
+  }
 
   /**
    * Sets the serial-number of the instance.
    * @param string $p_productSerialNumber Default blank.
    */
-  public function setAttr_product_serial_number($p_productSerialNumber ='')
-  {
+  public function setAttr_product_serial_number($p_productSerialNumber ='') {
      $this->product_serial_number = (string) $p_productSerialNumber;
-  } // method setAttr_product_serial_number
+  }
 
   /**
    * @return string
    */
-  public function getAttr_product_serial_number()
-  {
+  public function getAttr_product_serial_number() {
      return $this->product_serial_number;
-  } // method getAttr_product_serial_number
+  }
 
   /**
    * Sets if the product was demo-attribute of the instance.
    * @param string $p_productWasDemo. 'N': No, 'Y': Yes.
    */
-  public function setAttr_product_was_demo($p_productWasDemo ='N')
-  {
-     $this->product_was_demo = (string) $p_productWasDemo;
-  } // method setAttr_product_was_demo
+  public function setAttr_product_was_demo($p_productWasDemo ='N') : void {
+    $this->product_was_demo = (string) $p_productWasDemo;
+  }
 
   /**
    * @return string
    */
-  public function getAttr_product_was_demo()
-  {
-     return $this->product_was_demo;   
-  } // method getAttr_product_was_demo
+  public function getAttr_product_was_demo() : string {
+    return $this->product_was_demo;   
+  }
 
   /**
-   * @return boolean
+   * @return bool
    */
-  public function wasDemoProduct()
-  {
-     return ($this->getAttr_product_was_demo() == self::PRODUCT_DEMO_YES);
-  } // method wasDemoProduct
+  public function wasDemoProduct() : bool {
+    return ($this->getAttr_product_was_demo() == self::PRODUCT_DEMO_YES);
+  }
 
   /**
    * @param int $p_customWarrantyMonths Default null.
    */
-  public function setAttr_custom_warranty_months($p_customWarrantyMonths =null)
-  {
-     $this->custom_warranty_months = $p_customWarrantyMonths;
-  } // method setAttr_custom_warranty_months
+  public function setAttr_custom_warranty_months($p_customWarrantyMonths =null) : void {
+    $this->custom_warranty_months = $p_customWarrantyMonths;
+  }
 
   /**
-   * @return int|null
+   * @return int
    */
-  public function getAttr_custom_warranty_months()
-  {
-     return $this->custom_warranty_months;
-  } // method getAttr_custom_warranty_months
+  public function getAttr_custom_warranty_months() : int {
+    return $this->custom_warranty_months;
+  }
 
-  public function setAttr_product_date_sent($p_productDateSent ='')
-  {
-     $this->product_date_sent = (string) $p_productDateSent;
+  public function setAttr_product_date_sent($p_productDateSent ='') {
+    $this->product_date_sent = (string) $p_productDateSent;
   } // method setAttr_product_date_sent
 
   /**
@@ -324,7 +316,7 @@ class HandledProduct extends StdModel implements SaveableObjectInterface
    	  // Set related controller-instance.
       $dbObj = self::getInstance_activeDatabaseConnection($p_ctrlObj);
       $dbPDOConnectionObj = $dbObj->getPDOConnectionInstance();
-      if (self::doesDatabaseConnection_meetCriterias($dbPDOConnectionObj)) {
+      if (DBAbstraction::doesDatabaseConnection_meetCriterias($dbPDOConnectionObj)) {
         if (self::doesExists($p_objId, $p_ctrlObj)) {
           $sql = 'SELECT hp.handling_id';
           $sql .= PHP_EOL;
@@ -395,11 +387,10 @@ class HandledProduct extends StdModel implements SaveableObjectInterface
     * 
     * @return boolean
     */
-   public static function doesExists($p_objId, $p_ctrlObj)
-   {
+   public static function doesExists($p_objId, $p_ctrlObj) {
      $dbObj = self::getInstance_activeDatabaseConnection($p_ctrlObj);
      $dbPDOConnectionObj = $dbObj->getPDOConnectionInstance();
-     if (self::doesDatabaseConnection_meetCriterias($dbPDOConnectionObj)) {
+     if (DBAbstraction::doesDatabaseConnection_meetCriterias($dbPDOConnectionObj)) {
        // Setup the SQL-statement.
        $sqlStatement = 'SELECT count(hp.handling_id) AS NUM_RECORDS_FOUND';
        $sqlStatement .= PHP_EOL;
@@ -428,15 +419,17 @@ class HandledProduct extends StdModel implements SaveableObjectInterface
      }
   } // method doesExists
 
-  public static function doesSerialNumberExists($p_serialNumber, $p_ctrlObj)
-  {
+  /**
+   * @return bool
+   */
+  public static function doesSerialNumberExists($p_serialNumber, $p_ctrlObj) : bool {
      // Eg. to print '%' character you need to escape it with itself.
      $paramHandledSerialNumber = sprintf("%%%s%%", $p_serialNumber);
      $paramHandledProductType = 1; // Sold-product
 
      $dbObj = self::getInstance_activeDatabaseConnection($p_ctrlObj);
      $dbPDOConnectionObj = $dbObj->getPDOConnectionInstance();
-     if (self::doesDatabaseConnection_meetCriterias($dbPDOConnectionObj)) {
+     if (DBAbstraction::doesDatabaseConnection_meetCriterias($dbPDOConnectionObj)) {
        // Setup the SQL-statement.
        $sql = 'SELECT hp.handling_id AS handling_id';
        $sql .= PHP_EOL;
@@ -467,12 +460,10 @@ class HandledProduct extends StdModel implements SaveableObjectInterface
      } else {
        trigger_error('Unable to check if the record exists because of unavaiable active database-connection ...', E_USER_ERROR);
      }
-  } // method doesSerialNumberExists
+  }
 
-  public function addPersistentObj($p_dbObj)
-  {
-     $dbPDOConnectionObj = $p_dbObj->getPDOConnectionInstance();
-     if (self::doesDatabaseConnection_meetCriterias($dbPDOConnectionObj)) {
+  public function addPersistentRecord(DBAbstraction $p_dbAbstraction) {
+     if (DBAbstraction::doesDatabaseConnection_meetCriterias($p_dbAbstraction)) {
        // Setup the SQL-statement.
        $sql = 'INSERT INTO handled_products';
        $sql .= PHP_EOL;
@@ -536,5 +527,5 @@ class HandledProduct extends StdModel implements SaveableObjectInterface
      } else {
        trigger_error('Unable to check if the record exists because of unavaiable active database-connection ...', E_USER_ERROR);
      }
-  } // method addPersistentObj
+  }
 } // End class

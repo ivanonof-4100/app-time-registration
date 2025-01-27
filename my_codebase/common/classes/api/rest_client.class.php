@@ -1,4 +1,7 @@
 <?php
+namespace Common\Classes;
+use Exception;
+
 /**
  * Filename     : rest_client.class.php
  * Language     : PHP v5.x
@@ -44,7 +47,6 @@ class RestClient
 
      /**
       * Constructor, sets default options
-      * @return RestClient
       */
      public function __construct() {
         // $this->curlObj = curl_init();
@@ -59,10 +61,24 @@ class RestClient
         } else {
           trigger_error(__METHOD__.': Error occurred while initializing the cURL instance ...', E_USER_ERROR);
         }
-     } // method __construct
+     }
 
      public function __destruct() {
-     } // method __destruct
+     }
+
+     /**
+      * Creates the RESTClient
+      * @param string $p_url =null [optional]
+      * @return RestClient
+      */
+      public static function getInstance($p_url =null) : RestClient {
+        $clientObj = new RestClient();
+        if (!is_null($p_url)) {
+          $clientObj->setUrl($p_url);
+        }
+
+        return $clientObj;
+     }
 
      public static function initializeCurlSession() {
         try {
@@ -70,22 +86,7 @@ class RestClient
         } catch (Exception $e) {
           trigger_error('It was not possible to initialize a new cURL-session and return a handle ...'. PHP_EOL .$e->getMessage(), E_USER_ERROR);
         }
-     } // method initializeCurlSession
-
-     /**
-      * Creates the RESTClient
-      *
-      * @param string $p_url =null [optional]
-      * @return RestClient
-      */
-     public static function getInstance($p_url =null) : RestClient {
-        $clientObj = new RestClient();
-        if (!is_null($p_url)) {
-          $clientObj->setUrl($p_url);
-        }
-
-        return $clientObj;
-     } // method getInstance
+     }
 
      /**
       * @return 
@@ -95,25 +96,25 @@ class RestClient
      } // method getInstance_cURL
 
      /**
-      * @return boolean
+      * @return bool
      */
-     protected function isRequestMethodGET() : boolean {
+     protected function isRequestMethodGET() : bool {
         return ($this->getRequestMethod() === 'GET');
-     } // method isRequestMethodGET
+     }
 
      /**
-      * @return boolean
+      * @return bool
      */
-     protected function isRequestMethodPOST() : boolean {
-        return ($this->getRequestMethod() === 'POST');
-     } // method isRequestMethodPOST
+     protected function isRequestMethodPOST() : bool {
+      return ($this->getRequestMethod() === 'POST');
+     }
 
      /**
-      * @return boolean
+      * @return bool
      */
-     protected function isRequestMethodPUT() : boolean {
+     protected function isRequestMethodPUT() : bool {
         return ($this->getRequestMethod() === 'PUT');
-     } // method isRequestMethodPUT
+     }
 
      /**
       * Execute the call to the web-service.,
@@ -151,11 +152,9 @@ class RestClient
           $cURLResponse = curl_exec($cURLObj);
           // Extract the headers, respons-code and response.
           $this->treatResponse($cURLResponse);
-        } catch (ErrorException $e) {
+        } catch (Exception $e) {
           $errorMesg = 'Error ocurred when trying to excute a HTTP-request using cURL (cURL error: '. curl_error($cURLObj) .')'.PHP_EOL. $e->getMessage();
-          $this->reportConnectError($errorMesg);
-
-          // Then throw the new exception.
+          // Then re-throw the new exception.
           throw new RESTClientErrorException($errorMesg, $e->getCode(), $e);
         }
      } // method execute
@@ -451,7 +450,7 @@ class RestClient
            return $this->getResponseCode();
          } catch (RESTClientErrorException $e) {
            $this->close();
-           echo PHP_EOL . __METHOD__ .': Our REST-client had trouble doing the HTTP-request ...'. PHP_EOL .$e->getMessage();
+           // echo PHP_EOL . __METHOD__ .': Our REST-client had trouble doing the HTTP-request ...'. PHP_EOL .$e->getMessage();
            exit(1);
         }
      } // method call

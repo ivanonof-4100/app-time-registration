@@ -53,10 +53,10 @@ function content_5febb7218162d9_83934948 (Smarty_Internal_Template $_smarty_tpl)
 <div class="container">
   <div class="row">
     <div class="col-sm-12 col-md-12">
-      <div class="text-left">
+      <div class="text-start">
   <a href="/" target="_self" title="Til Startsiden"><span class="logo-section font-airstrike-academy" style="color:black;">Ivanonof.dk</span></a>
       </div>
-      <div class="text-left" style="margin:10px 0 10px 0">
+      <div class="text-start" style="margin:10px 0 10px 0">
         <span lang="en" class="overlay-color-blue text-uppercase wide-text">- OFFICIAL WEB-SITE OF Ivan Mark Andersen</span>
       </div>
     </div><!-- col -->
@@ -153,7 +153,7 @@ function content_5febb7218162d9_83934948 (Smarty_Internal_Template $_smarty_tpl)
             <div class="bs-callout bs-callout-error overlay-color-white">
               <div lang="en" class="error-mesg">
               <h3 class="text-center"><i class="fa fa-info-circle" aria-hidden="true"></i></h3>
-<p class="text-left"><span style="color:red;"><?php echo $_smarty_tpl->tpl_vars['errorMessage']->value;?>
+<p class="text-start"><span style="color:red;"><?php echo $_smarty_tpl->tpl_vars['errorMessage']->value;?>
 </span></p>
               </div>
             </div>

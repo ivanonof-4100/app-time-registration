@@ -9,7 +9,7 @@
  <meta name="description" content="{$pageMetaDescription}">
  <meta name="author" content="Ivan Mark Andersen">
 
- <link rel="shortcut icon" href="/favicon.ico">
+<!-- <link rel="shortcut icon" href="/favicon.ico"> -->
  <!-- Bootstrap Stylesheet -->
  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
  <link type="text/css" rel="stylesheet" href="/styles/main_v17.min.css">
@@ -22,10 +22,10 @@
 <div class="container">
   <div class="row">
     <div class="col-sm-12 col-md-12">
-      <div class="text-left">
+      <div class="text-start">
   <a href="/" target="_self" title="Til Startsiden"><span class="logo-section font-airstrike-academy" style="color:black;">Ivanonof.dk</span></a>
       </div>
-      <div class="text-left" style="margin:10px 0 10px 0">
+      <div class="text-start" style="margin:10px 0 10px 0">
         <span lang="en" class="overlay-color-blue text-uppercase wide-text">- OFFICIAL WEB-SITE OF Ivan Mark Andersen</span>
       </div>
     </div><!-- col -->

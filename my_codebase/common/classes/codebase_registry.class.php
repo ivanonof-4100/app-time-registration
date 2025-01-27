@@ -2,24 +2,20 @@
 namespace Common\Classes;
 
 use Common\Classes\StdApp;
+use Common\Classes\Helper\CustomToken;
 
 /**
  * Filename     : codebase_registry.class.php
- * Language     : PHP v5.x
+ * Language     : PHP v7.x
  * Date created : 25/04-2012, Ivan
- * Last modified: 25/04-2012, Ivan
+ * Last modified: 20/05-2023, Ivan
  * Developers   : @author Ivan Mark Andersen <ivanonof@gmail.com>
  *
  * Description:
- *  This class handles access to several instances of classes used and needed in my codebase.
+ * This class handles access to several instances of classes used and needed in my codebase.
  * 
- *  By using the registry-design-pattern we are able to eliminate use of global variables in the framework.
- *  And yet in a smart way - now we have a handle to the variable, that lets you use and access it.
- * 
- *  This way globally used variable are set once and accessed zero or many times using dedicated methods.
- *
- *  For safety reasons and for a simpler program-design, it is not possible to overwrite existing registry-entries.
- *  This way we do not have to worry so much about - What if that happend?!
+ * By using the registry design-pattern we are able to eliminate use of global variables in the framework.
+ * Now we have a handle to the variable to access it and write it in the registry.
 */
 class CodebaseRegistry
 {
@@ -54,19 +50,12 @@ class CodebaseRegistry
      return array_key_exists($p_entryName, $this->arrRegistry);
   }
 
-  protected function setRegistryEntry($p_entryName, $p_entryContent) {
-     if (!$this->doesEntryExists($p_entryName)) {
-       // Not all-ready set.
-       $this->arrRegistry[$p_entryName] = $p_entryContent;
-     }
-// Or Maby the entry should just be set no matter when. The program depends on it.
-//     $this->arrRegistry[$p_entryName] = $p_entryContent;
-/*
-     else {
-       // We dont allow the entry being set twice.
-       trigger_error(__METHOD__ .': Registry-entry <b>'.$p_entryName .'</b> was allready in use, so we did NOT overwrite the instance in the registry ...', E_USER_WARNING);
-     }
-*/
+  /**
+   * @param string $p_entryName
+   * @param $p_entryContent
+   */
+  protected function setRegistryEntry(string $p_entryName, $p_entryContent) : void {
+      $this->arrRegistry[$p_entryName] = $p_entryContent;
   }
 
   protected function getRegistryEntry($p_entryName) {
@@ -75,7 +64,6 @@ class CodebaseRegistry
        return $this->arrRegistry[$p_entryName];
      } else {
        // No entry was found with that entry-name.
-       trigger_error(__METHOD__ .': Requested registry-entry <b>'.$p_entryName .'</b> was NOT used in the registry ...', E_USER_WARNING);
        return null;
      }
   }
@@ -94,22 +82,10 @@ class CodebaseRegistry
      return $this->getRegistryEntry('app_instance');
   }
 
-  public function setInstance_errorHandler($p_errorHandlerObj) : void {
-     $this->setRegistryEntry('error_handler', $p_errorHandlerObj);
+  public function setInstance_sessionHandler($p_sessionHandler) : void {
+     $this->setRegistryEntry('session_handler', $p_sessionHandler);
   }
 
-  public function getInstance_errorHandler() {
-     return $this->getRegistryEntry('error_handler');
-  }
-
-
-  public function setInstance_sessionHandler($p_sessionHandlerObj) : void {
-     $this->setRegistryEntry('session_handler', $p_sessionHandlerObj);
-  }
-
-  /**
-   * @return SessionHandler
-   */
   public function getInstance_sessionHandler() {
      return $this->getRegistryEntry('session_handler');
   }
@@ -128,7 +104,7 @@ class CodebaseRegistry
 
   /**
    * @return mixed
-  */
+   */
   public function getInstance_languageFileHandler() {
      return $this->getRegistryEntry('language_handler');
   }
@@ -145,10 +121,31 @@ class CodebaseRegistry
   }
 
   /**
-   * @return boolean
+   * @return bool
    */
-  public function doesEntryExists_dbConnection() {
+  public function doesEntryExists_dbConnection() : bool {
      return $this->doesEntryExists('db_primary');
+  }
+
+  /**
+   * @return bool
+   */
+  public function doesEntryExists_securityToken() : bool {
+     return $this->doesEntryExists('security_token');
+  }
+
+  /**
+   * @param CustomToken $p_securityToken
+   */
+  public function setInstance_securityToken(CustomToken $p_securityToken) : void {
+     $this->setRegistryEntry('security_token', $p_securityToken);
+  }
+
+  /**
+   * @return CustomToken
+   */
+  public function getInstance_securityToken() : CustomToken {
+     return $this->getRegistryEntry('security_token');
   }
 
   public function setInstance_debugHandler($p_debugObj) : void {

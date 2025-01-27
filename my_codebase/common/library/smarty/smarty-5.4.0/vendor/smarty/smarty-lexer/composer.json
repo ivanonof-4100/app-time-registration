@@ -1,0 +1,39 @@
+{
+    "name": "smarty/smarty-lexer",
+    "type": "library",
+    "description": "Smarty Lexer/Parser generator",
+    "keywords": ["templating"],
+    "homepage": "http://www.smarty.net",
+    "license": "LGPL-3.0",
+    "authors": [
+        {
+            "name": "Monte Ohrt",
+            "email": "monte@ohrt.com"
+        },
+        {
+            "name": "Uwe Tews",
+            "email": "uwe.tews@googlemail.com"
+        },
+        {
+            "name": "Rodney Rehm",
+            "email": "rodney.rehm@medialize.de"
+        },
+        {
+            "name": "Simon Wisselink",
+            "homepage": "https://www.iwink.nl/"
+        }
+    ],
+    "support": {
+        "irc": "irc://irc.freenode.org/smarty",
+        "issues": "http://code.google.com/p/smarty-php/issues/list",
+        "forum": "http://www.smarty.net/forums/"
+    },
+    "autoload": {
+        "psr-4": {
+            "SmartyGenerator\\": "src/SmartyGenerator/"
+        }
+    },
+    "require": {
+        "php": "^7.1 || ^8.0"
+    }
+}

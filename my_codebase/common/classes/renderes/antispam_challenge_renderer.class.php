@@ -1,6 +1,6 @@
 <?php
 /**
- * Script-name  : antispam_challenge_renderer.class.php
+ * Filename  : antispam_challenge_renderer.class.php
  * Language     : PHP v7.x
  * Date created : IMA, 06/11-2016
  * Last modified: IMA, 06/11-2016

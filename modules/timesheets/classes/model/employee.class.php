@@ -250,7 +250,7 @@ class Employee extends StdModel implements SaveableObjectInterface
      */
     public static function doesExists(DBAbstraction $p_dbAbstraction, string $p_objUuid) : bool {
       $dbPDOConnection = $p_dbAbstraction->getPDOConnectionInstance();
-      if (self::doesDatabaseConnection_meetCriterias($dbPDOConnection)) {
+      if (DBAbstraction::doesDatabaseConnection_meetCriterias($dbPDOConnection)) {
         // Setup the SQL-statement.
         $sql = 'SELECT count(e.employee_uuid) AS NUM_RECORDS_FOUND';
         $sql .= PHP_EOL;
@@ -286,7 +286,7 @@ class Employee extends StdModel implements SaveableObjectInterface
     public static function getInstance_byObjUuid(DBAbstraction $p_dbAbstraction, string $p_objUuid) {
       // Retrive active PDO database-connection
       $dbPDOConnection = $p_dbAbstraction->getPDOConnectionInstance();
-      if (self::doesDatabaseConnection_meetCriterias($dbPDOConnection)) {
+      if (DBAbstraction::doesDatabaseConnection_meetCriterias($dbPDOConnection)) {
         if (self::doesExists($p_dbAbstraction, $p_objUuid)) {
           // Setup SQL-statement.
           $sql = 'SELECT employee_uuid';
@@ -343,7 +343,7 @@ class Employee extends StdModel implements SaveableObjectInterface
      */
     public function addPersistentRecord(DBAbstraction $p_dbAbstraction) : bool {
       $dbPDOConnection = $p_dbAbstraction->getPDOConnectionInstance();
-      if (self::doesDatabaseConnection_meetCriterias($dbPDOConnection)) {
+      if (DBAbstraction::doesDatabaseConnection_meetCriterias($dbPDOConnection)) {
          // Setup the SQL-statement.
          $sql = sprintf('INSERT INTO %s', self::db_table_name);
          $sql .= PHP_EOL;
@@ -414,7 +414,7 @@ class Employee extends StdModel implements SaveableObjectInterface
      */
     public function updPersistentRecord(DBAbstraction $p_dbAbstraction) : bool {
       $dbPDOConnection = $p_dbAbstraction->getPDOConnectionInstance();
-      if (self::doesDatabaseConnection_meetCriterias($dbPDOConnection)) {
+      if (DBAbstraction::doesDatabaseConnection_meetCriterias($dbPDOConnection)) {
           // Setup the SQL-statement.
           $sql = sprintf('UPDATE %s', self::db_table_name);
           $sql .= PHP_EOL;
@@ -471,7 +471,7 @@ class Employee extends StdModel implements SaveableObjectInterface
     */
     public function delPersistentRecord(DBAbstraction $p_dbAbstraction) : bool {
       $dbPDOConnection = $p_dbAbstraction->getPDOConnectionInstance();
-      if (self::doesDatabaseConnection_meetCriterias($dbPDOConnection)) {
+      if (DBAbstraction::doesDatabaseConnection_meetCriterias($dbPDOConnection)) {
         // Setup the SQL-statement.
         $sql = sprintf('DELETE FROM %s', self::db_table_name);
         $sql .= PHP_EOL;

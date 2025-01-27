@@ -50,10 +50,10 @@ $_smarty_tpl->_assignInScope('pageMetaDescription', (($tmp = @$_smarty_tpl->tpl_
 <div class="container">
   <div class="row">
     <div class="col-sm-12 col-md-12">
-      <div class="text-left">
+      <div class="text-start">
   <a href="/" target="_self" title="Til Startsiden"><span class="logo-section font-airstrike-academy" style="color:black;">Ivanonof.dk</span></a>
       </div>
-      <div class="text-left" style="margin:10px 0 10px 0">
+      <div class="text-start" style="margin:10px 0 10px 0">
         <span lang="en" class="overlay-color-blue text-uppercase wide-text">- OFFICIAL WEB-SITE OF Ivan Mark Andersen</span>
       </div>
     </div><!-- col -->

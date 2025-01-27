@@ -2,19 +2,18 @@
 namespace Common\Classes\Model;
 
 use Exception;
-use PDO;
 use Common\Classes\Db\DBAbstraction;
 
 /**
- *   Script-name: std_model.class.php
+ *   Filename: std_model.class.php
  *      Language: PHP v7.4
- *  Date created: 24/01-2014, Ivan
+ *  Date created: 02/10-2022, Ivan
  * Last modified: 25/03-2023, Ivan
  *    Developers: @author Ivan Mark Andersen <ivanonof@gmail.com>
- *    @copyright: Copyright (C) 2014 by Ivan Mark Andersen
+ *    @copyright: Copyright (C) 2023 by Ivan Mark Andersen
  *
  * Description:
- *  Wraps a generic implementation of a standard model-object in my custom MVC-framework.
+ * Wraps a generic implementation of a standard model-object in my custom MVC-framework.
 */
 
 // Exceptions related to this class.
@@ -122,14 +121,14 @@ abstract class StdModel
      return get_class_vars(self::getClassName($p_obj));
   }
 
-  // All the _rowstate-related methods.
+  // All _rowstate-related methods.
 
   /**
    * Sets the value of the attribute _rowstate of the instance.
    * @param int $p_rowstate
    */
-  protected function setAttr_rowstate(int $p_rowstate) {
-     $this->_rowstate = (int) $p_rowstate;
+  protected function setAttr_rowstate(int $p_rowstate) : void {
+    $this->_rowstate = (int) $p_rowstate;
   }
 
   /**
@@ -137,7 +136,7 @@ abstract class StdModel
    * @return int
    */
   protected function getAttr_rowstate() : int {
-     return $this->_rowstate;
+    return $this->_rowstate;
   }
 
   /**
@@ -145,15 +144,15 @@ abstract class StdModel
    * @return int Returns the current value of the attribute _rowstate of the instance.
    */
   public function getCurrentRowstate() : int {
-     return $this->getAttr_rowstate();
+    return $this->getAttr_rowstate();
   }
 
   /**
    * Sets the _rowstate attribute of the instance to the UNCHANGED state, that is the default rowstate value.
    */
   public function resetRowstate() : void {
-     // Default for the _rowstate
-     $this->markAsUnchanged();
+    // Default for the _rowstate
+    $this->markAsUnchanged();
   }
 
   /**
@@ -161,7 +160,7 @@ abstract class StdModel
    * @return void
    */
   public function markAsUnchanged() : void {
-     $this->setAttr_rowstate(self::ROWSTATE_UNCHANGED);
+    $this->setAttr_rowstate(self::ROWSTATE_UNCHANGED);
   }
 
   /**
@@ -220,14 +219,6 @@ abstract class StdModel
    */
   public function isMarkedAsDeleted() : bool {
      return ($this->getAttr_rowstate() == self::ROWSTATE_DELETED);
-  }
-
-  /**
-   * @param resource $p_dbPDOConnection
-   * @return bool
-   */
-  public static function doesDatabaseConnection_meetCriterias($p_dbPDOConnection) : bool {
-    return (is_object($p_dbPDOConnection) && ($p_dbPDOConnection instanceof PDO));
   }
 
   /**
@@ -301,15 +292,15 @@ abstract class StdModel
      }
 
      if ($wasSuccessful) {
-        // Reset the status of the record (_rowstate)
+       // Reset the state of the record (_rowstate)
        $this->resetRowstate();
      }
 
-     // Return the result of persistent operation only on data and commit - NOT rollback!
+     // Return the result of persistent operation.
      return ($wasSuccessful === TRUE) ? $wasSuccessful : FALSE;
    } catch (Exception $e) {
-     $wasNotSuccessful = $p_dbAbstraction->rollback();
-     throw $e; // Re-throw exception again to catch at a higher controller-level.
+     // Re-throw exception again to catch at a higher controller-level.
+     throw new Exception(sprintf('An error occured trying to persist data: %s', $e->getMessage()));
    }
  }
-} // End class
+}

@@ -1,0 +1,6 @@
+@font-face {
+font-family:'russo_oneregular';
+src: url('russoone-regular-webfont.woff2') format('woff2'),url('russoone-regular-webfont.woff') format('woff');
+font-weight:normal;
+font-style:normal;
+}

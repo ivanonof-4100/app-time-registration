@@ -1,28 +1,35 @@
 <?php
 namespace App\Modules\Timesheets\Classes\Renderes;
 
-use Common\Classes\Renderes\StdRenderer;
+use DateTime;
+use Exception;
+// NOTE: NumberFormatter needs the PHP-module php7.4-intl
+use NumberFormatter;
 use Common\Classes\Renderes\Template;
+use Common\Classes\Renderes\StdRenderer;
+use Common\Classes\Renderes\MenuRenderer;
 use Common\Classes\LanguagefileHandler;
 use Common\Classes\Datetime\CustomDateTime;
 use Common\Classes\Db\DBAbstraction;
 use App\Modules\Timesheets\Classes\Model\Timesheet;
-use DateTime;
+// use Common\Classes\Helper\FlashMessage;
 
 class TimesheetRenderer extends StdRenderer {
+    protected $custom_template_path;
 
-    public function __construct(LanguagefileHandler $p_languagefileHandler, bool $p_isPrintPage =FALSE) {
-        parent::__construct($p_languagefileHandler, $p_isPrintPage);
+    public function __construct(LanguagefileHandler $p_languagefileHandler) {
+      parent::__construct($p_languagefileHandler);
     }
 
     public function __destruct() {
-        parent::__destruct();
+      parent::__destruct();
     }
 
-    public static function getInstance(LanguagefileHandler $p_languagefileHandler, bool $p_isPrintPage =FALSE) : TimesheetRenderer {
-        $timesheetRenderer = new TimesheetRenderer($p_languagefileHandler, $p_isPrintPage);
-        $timesheetRenderer->startOutputBuffering();
-        return $timesheetRenderer;
+    /**
+     * @param LanguagefileHandler $p_languagefileHandler
+     */
+    public static function getInstance(LanguagefileHandler $p_languagefileHandler) : TimesheetRenderer {
+      return new TimesheetRenderer($p_languagefileHandler);
     }
 
     /**
@@ -35,23 +42,30 @@ class TimesheetRenderer extends StdRenderer {
       $curWeekNumber = $customDateTime->getWeekNumber();
 
       $arrOptions_weeks = array();
-      for ($week =1; ($week <= $curWeekNumber); $week++) {
+      for ($week =$curWeekNumber; ($week >= 1); $week--) {
         $arrOptions_weeks["$week"] = $p_languagefileHandler->getEntryContent('CUSTOM_DATETIME_WEEK_SHORT', $week);
       }
       return $arrOptions_weeks;
     }
 
     /**
-     * @param DBAbstraction
+     * @param DBAbstraction $p_dbAbstraction
      * @param string $p_employeeUUID
+     * @param string $p_focusDay eg.: '2024-11-05'
      * @param int $p_weekNumber Default zero.
      * 
      * @return void
      */
-    public function renderWeeklyTimesheet(DBAbstraction $p_dbAbstraction, string $p_employeeUUID, int $p_weekNumber =0) : void {
+    public function renderWeeklyTimesheet(DBAbstraction $p_dbAbstraction, string $p_employeeUUID, string $p_focusDay, int $p_weekNumber =0) : void {
         // Load language-file
         $languagefileHandler = $this->getInstance_languageFileHandler();
-        $languagefileHandler->loadLanguageFile('custom_datetime');
+        $languagefileHandler->loadLanguageFile('custom_datetime', APP_LANGUAGE_PATH);
+
+        $arrLocalizedMonths = CustomDateTime::getLocalizedMonths($languagefileHandler);
+        $localizedDateFormat = CustomDateTime::getLocalizedDateFormat($languagefileHandler);
+
+        $menuRenderer = MenuRenderer::getInstance($languagefileHandler);
+        $this->setMainNavigation($menuRenderer->render_mainMenu($p_dbAbstraction, $languagefileHandler->getLanguageIdent(), $this->getAttr_arrLangs()));
 
         // Set year start and end-dates.
         $yearCustomDateTime = CustomDateTime::getInstance();
@@ -101,12 +115,11 @@ class TimesheetRenderer extends StdRenderer {
                                                                     $datetimeWeekDateEnd->format(CustomDateTime::getISODateFormat()));
         }
 
-        // Retrive the accumulated annualy hours
-        // echo sprintf("%s - %s", $yearStartDate->format(CustomDateTime::getISODateFormat()), $yearEndDate->format(CustomDateTime::getISODateFormat()));
+        // Retrive the annualy accumulated-hours.
         $arrAccumulatedHours_annualy = Timesheet::retriveAccumulatedHours($p_dbAbstraction,
                                                                           $p_employeeUUID,
-                                                                          /* '2022-01-01' */ $yearStartDate->format(CustomDateTime::getISODateFormat()),
-                                                                          /* '2022-12-31' */ $yearEndDate->format(CustomDateTime::getISODateFormat())
+                                                                          $yearStartDate->format(CustomDateTime::getISODateFormat()),
+                                                                          $yearEndDate->format(CustomDateTime::getISODateFormat())
                                                                          );
         if (empty($arrAccumulatedHours_annualy)) {
           $arrAccumulatedHours_annualy[] = array('total_hours_regular' => 0.0,
@@ -117,15 +130,17 @@ class TimesheetRenderer extends StdRenderer {
         // Week-days
         $datetimeWorkDay = clone $datetimeWeekDateStart;
         for ($daySeq =1; $daySeq <=7; $daySeq++) {
-          $workDate = $datetimeWorkDay->format('d-m-Y');
+          $workDate = $datetimeWorkDay->format($localizedDateFormat);
           $isoWorkDate = $datetimeWorkDay->format(CustomDateTime::getISODateFormat());
 
           // Set localized content.
+          $curLanguage_shortEntry = sprintf('CUSTOM_DATETIME_WEEKDAY_SHORT_%d', $daySeq);
           $curLanguageEntry = sprintf('CUSTOM_DATETIME_WEEKDAY_%d', $daySeq);
           if ($languagefileHandler->doesLanguageEntryExists($curLanguageEntry)) {
             // Check if there are any registration on date of isoWorkDate for the employee
             if (array_key_exists($isoWorkDate, $arrRegisteredData)) {
               $arrWeekdays[$daySeq] = ['weekday_name' => $languagefileHandler->getEntryContent($curLanguageEntry),
+                                       'weekday_name_short' => $languagefileHandler->getEntryContent($curLanguage_shortEntry),
                                        'work_date' => $workDate,
                                        'iso_work_date' => $isoWorkDate,
                                        'timesheet_uuid' => $arrRegisteredData[$isoWorkDate]["timesheet_uuid"],
@@ -135,6 +150,7 @@ class TimesheetRenderer extends StdRenderer {
                                       ];
             } else {
               $arrWeekdays[$daySeq] = ['weekday_name' => $languagefileHandler->getEntryContent($curLanguageEntry),
+                                       'weekday_name_short' => $languagefileHandler->getEntryContent($curLanguage_shortEntry),
                                        'work_date' => $workDate,
                                        'iso_work_date' => $isoWorkDate,
                                        'timesheet_uuid' => '',
@@ -148,29 +164,39 @@ class TimesheetRenderer extends StdRenderer {
           $datetimeWorkDay->modify('+1 day');
         }
 
-        $pageTitle = 'Weekly Timesheets';
-        $template = Template::getInstance('timesheet_register_weekly.tpl');
+        // Get localized number-formater.
+        $numberFormater = NumberFormatter::create($languagefileHandler->getLanguageIdent(), NumberFormatter::DECIMAL);
 
+        // Page meta-data is different from supported language.
+        // @TODO: Retrive page meta-data stored in the database.
+        $pageTitle = 'Weekly Timesheets'; // Page-title is stored in the menu, I just need to create a menu for the back-end.
+        $pageMetaDescription = 'Weekly Timesheet administration'; // Also added to the menu-structore
+        $pageMetaKeywords = 'Timesheets, Weekly, Your used time, Administation'; // Also added to the menu-structure.
+
+        $template = Template::getInstance('timesheet_register_weekly.tpl', Template::PATH_TEMPLATES_MODULE);
         // Send the variables to the template.
+        $template->assign('employeeUuid', $p_employeeUUID);
         $template->assign('yearNumber', $yearNumber);
         $template->assign('weekNumber', $weekNumber);
-        $template->assign('weekDateStart', $datetimeWeekDateStart->format('d-m-Y'));
-        $template->assign('weekDateEnd', $datetimeWeekDateEnd->format('d-m-Y'));
+        $template->assign('weekDateStart', $datetimeWeekDateStart->format($localizedDateFormat));
+        $template->assign('weekDateEnd', $datetimeWeekDateEnd->format($localizedDateFormat));
         $template->assign('arrWeekdays', $arrWeekdays);
+        $template->assign('focusDay', $p_focusDay);
         $template->assign('arrAccumulatedHours_week', $arrAccumulatedHours_week[0]);
         $template->assign('totalHours_week', array_sum($arrAccumulatedHours_week[0]));
         $template->assign('arrAccumulatedHours_annualy', $arrAccumulatedHours_annualy[0]);
         $template->assign('totalHours_annualy', array_sum($arrAccumulatedHours_annualy[0]));
         $template->assign('arrOptions_weeks', $arrOptions_weeks);
-
-        // We also need to pass employee_uuid
-        $template->assign('employeeUuid', $p_employeeUUID); // TEST employee: Dr. John Doe ;-)
-        // Fetch resulting output.
-        $timesheetOuput = $template->fetch();
-
-        // Display
-        $pageMetaDescription = 'Weekly Timesheet administration';
-        $pageMetaKeywords = 'Timesheets, Weekly, Your used time, Administation';
-        $this->displayAsPage($pageTitle, $pageMetaDescription, $pageMetaKeywords, $timesheetOuput);
+        $template->assign('arrLocalizedMonths', $arrLocalizedMonths);
+        $template->assign('decimalSeparator', $numberFormater->getSymbol(NumberFormatter::DECIMAL_SEPARATOR_SYMBOL));
+        $template->assign('arrConfigPaths', Template::getTemplatePaths());
+//        $template->assign('flashMessage', FlashMessage::getInstance('Your data was saved successfully ...', FlashMessage::MESSAGE_TYPE_SUCCESS));
+        $template->assign('resumeSessionId', session_id());
+        try {
+          $templateOutput = $template->fetch();
+          $this->displayAsPage($pageTitle, $pageMetaDescription, $pageMetaKeywords, $templateOutput);
+        } catch (Exception $e) {
+          $this->displayAsPage($pageTitle, $pageMetaDescription, $pageMetaKeywords, $e->getMessage());
+        }
     }
 }

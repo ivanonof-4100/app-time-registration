@@ -3,8 +3,8 @@ namespace Common\Classes;
 use Common\Classes\CustomString;
 
 /**
- * Script-name  : password.class.php 
- * Language     : PHP v7.4, v5.x
+ * Filename  : password.class.php 
+ * Language     : PHP v7.4
  * Date created : 18/10-2012, Ivan
  * Last modified: 24/09-2022, Ivan
  * Author(s)    : @author Ivan Mark Andersen <ivanonof@gmail.com>
@@ -28,8 +28,6 @@ class Password
    * 
    * @param string $p_passwd
    * @param boolean $p_isAllreadyEncrypted
-   * 
-   * @return Password
    */
   public function __construct($p_passwd ='', $p_isAllreadyEncrypted =false) {
      if (empty($p_passwd)) {
@@ -65,7 +63,7 @@ class Password
   /**
    * @return string
    */
-  public function getAttr_password() {
+  public function getAttr_password() : string {
      return $this->password;
   }
 
@@ -76,8 +74,7 @@ class Password
    * @return string
    */
   public static function generateRandomPassword($p_keyLength =8) {
-    $strPossibleChars = CustomString::getInstance('UTF-8', 'abcdefghijklmnopqrstuvwxyz_.:-ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789');
- 
+    $strPossibleChars = CustomString::getInstance('abcdefghijklmnopqrstuvwxyz_.:-ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 'UTF-8');
     $randMaxPos = $strPossibleChars->getStringLengthOfInstance();
     for ($idx =0; $idx < $p_keyLength; $idx++) {
       $randPos = rand(0, $randMaxPos);

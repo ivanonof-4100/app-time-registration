@@ -15,23 +15,19 @@ class CustomSessionHandlerUnitTest extends PHPUnit_Framework_Testcase
    /**
     * @return MyStringUnitTest
     */
-   public function __construct()
-   {
+   public function __construct() {
       parent::__construct();
    } // method __construct
 
-   public function setup()
-   {
+   public function setup() {
       $this->testObj = CustomSessionHandler::getInstance();
    } // method setup
 
-   public function getTestInstance()
-   {
+   public function getTestInstance() {
       return $this->testObj;
    } // method getTestInstance
 
-   public function testInstanceType()
-   {
+   public function testInstanceType() {
       $sessionHandlerObj = $this->getTestInstance();
       $this->assertInstanceOf('CustomSessionHandler', $sessionHandlerObj, "The test-instance was not an instance of the expected class ...");
    } // method testInstanceType

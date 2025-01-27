@@ -1,27 +1,18 @@
 CREATE TABLE `timesheet` (
   `timesheet_uuid` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'UUID()',
   `employee_uuid` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `contract_uuid` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `project_uuid` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `timesheet_work_date` date NOT NULL,
   `timesheet_hours_regular` float NOT NULL,
   `timesheet_hours_overtime` float NOT NULL,
   `timesheet_hours_break` float NOT NULL,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`timesheet_uuid`),
   KEY `fk_timesheet_employee_idx` (`employee_uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
 
 /* Triggers */
-DELIMITER #
-CREATE TRIGGER `trigger_timesheet_beforeinsert` BEFORE INSERT ON `timesheet`
-FOR EACH ROW
-BEGIN
-	SET NEW.timesheet_uuid = UUID();
-END
-#DELIMITER ;
-
-
 
 DELIMITER $$
 $$
@@ -33,6 +24,15 @@ END
 $$
 DELIMITER ;
 
+DELIMITER $$
+$$
+CREATE TRIGGER trigger_timesheet_beforeupdate
+BEFORE UPDATE ON timesheet FOR EACH ROW
+BEGIN 
+	SET NEW.updated_at = current_timestamp(); 
+END
+$$
+DELIMITER ;
 
 /* SQL-statment: Number of registions for the employee */
 SELECT count(t.timesheet_uuid) AS NUM_RECORDS_FOUND
@@ -64,9 +64,24 @@ GROUP BY t.employee_uuid, working_week
 ORDER BY working_week DESC;
 
 /* Data also with the quarter */
-SELECT QUARTER(timesheet_work_date) AS working_quarter, week(t.timesheet_work_date) AS working_week, sum(t.timesheet_hours_regular) AS total_hours_regular, sum(t.timesheet_hours_overtime) AS total_hours_overtime, sum(t.timesheet_hours_break) AS total_hours_break
+SELECT QUARTER(t.timesheet_work_date) AS working_quarter, week(t.timesheet_work_date) AS working_week, sum(t.timesheet_hours_regular) AS total_hours_regular, sum(t.timesheet_hours_overtime) AS total_hours_overtime, sum(t.timesheet_hours_break) AS total_hours_break
 FROM timesheet t
 WHERE t.employee_uuid = '597e8483-467d-11ed-b005-1c1bb5a9bf9b'
  AND t.timesheet_work_date BETWEEN '2022-01-01' AND '2022-12-31'
 GROUP BY t.employee_uuid, working_quarter, working_week
 ORDER BY working_quarter DESC, working_week DESC;
+
+SELECT YEAR(t.timesheet_work_date) AS working_year, QUARTER(t.timesheet_work_date) AS working_quarter, WEEKOFYEAR(t.timesheet_work_date) AS working_week, sum(t.timesheet_hours_regular) AS total_hours_regular, SUM(t.timesheet_hours_overtime) AS total_hours_overtime, SUM(t.timesheet_hours_break) AS total_hours_break
+FROM timesheet t
+WHERE t.employee_uuid = '597e8483-467d-11ed-b005-1c1bb5a9bf9b'
+ AND t.timesheet_work_date BETWEEN '2024-01-01' AND '2024-12-31'
+GROUP BY t.employee_uuid, working_year, working_quarter, working_week
+ORDER BY working_year, working_quarter ASC, working_week ASC;
+
+/* New and much better solution for referencing the week using both year and ISO-week number */
+SELECT YEARWEEK(t.timesheet_work_date) AS working_week, QUARTER(t.timesheet_work_date) AS working_quarter, sum(t.timesheet_hours_regular) AS total_hours_regular, SUM(t.timesheet_hours_overtime) AS total_hours_overtime, SUM(t.timesheet_hours_break) AS total_hours_break
+FROM timesheet t
+WHERE t.employee_uuid = '597e8483-467d-11ed-b005-1c1bb5a9bf9b'
+ AND t.timesheet_work_date BETWEEN '2024-01-01' AND '2024-12-31'
+GROUP BY working_week, working_quarter
+ORDER BY working_week ASC, working_quarter ASC;

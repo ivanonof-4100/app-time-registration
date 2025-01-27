@@ -4,10 +4,11 @@ namespace Common\Classes\Datetime;
 use DateTime;
 use DateTimeZone;
 use UnexpectedValueException;
+use Common\Classes\LanguagefileHandler;
 
 /**
- * Script-name  : custom_datetime.class.php
- * Language     : PHP v7.4, v7.2, v5.x
+ * Filename     : custom_datetime.class.php
+ * Language     : PHP v7.4
  * Date created : 21/01-2014, Ivan
  * Last modified: 14/10-2022, Ivan
  * Developers   : @author Ivan Mark Andersen <ivanonof@gmail.com>
@@ -18,10 +19,10 @@ use UnexpectedValueException;
  *  This class wraps and implements handling of dates and date-time strings.
  *
  * Example 1:
- *  $customDateTimeObj = CustomDateTime::getInstance();
+ *  $dateTimeObj = CustomDateTime::getInstance();
  *  $dateTimeObj->setDate(2009, 1, 31);
- *  $dateTimeObj = $customDateTimeObj->getInstance_dateTime();
- *  $dateTimeObj->modify("+1 month");
+ *  $dateTimeObj2 = $customDateTimeObj->getInstance_dateTime();
+ *  $dateTimeObj2->modify("+1 month");
  *
  *  echo $dateTimeObj->format("Y-n-j");
  *
@@ -32,6 +33,11 @@ use UnexpectedValueException;
 */
 class CustomDateTime
 {
+   const FORMAT_ISO_DATE = 'Y-m-d';
+
+   /**
+    * @var bool
+    */
    protected $useActualMonthLength;
 
    /**
@@ -54,9 +60,9 @@ class CustomDateTime
     * Default constructor.
     *
     * @param string $p_initDateTimeStr Default 'now'
-    * @param string $p_timezone
+    * @param string $p_timezone Default 'UTC'
     */
-   public function __construct(string $p_initDateTimeStr ='now', string $p_timezone ='Europe/Copenhagen') {
+   public function __construct(string $p_initDateTimeStr ='now', string $p_timezone ='UTC') {
       // Default timezone is set in the configuration-file for the current site.
       $this->setAttr_useActualMonthLength(TRUE);
 
@@ -83,7 +89,7 @@ class CustomDateTime
       return sprintf("%s (%s)".PHP_EOL, $this->dateTimeObj->format($outputFormat), $dateTimeZone->getName());
    }
 
-   public static function getInstance($p_initDateTimeStr ='now', string $p_timezone ='Europe/Copenhagen') : CustomDateTime {
+   public static function getInstance($p_initDateTimeStr ='now', string $p_timezone ='UTC') : CustomDateTime {
       return new CustomDateTime($p_initDateTimeStr, $p_timezone);
    }
 
@@ -99,7 +105,24 @@ class CustomDateTime
     * @return string
     */
    public static function getISODateFormat() : string {
-      return 'Y-m-d';
+      return self::FORMAT_ISO_DATE;
+   }
+
+   /**
+    * @return string
+    */
+   public static function getCookieDateTimeFormat() : string {
+      return DateTime::COOKIE;
+   }
+
+   /**
+    * @param int $p_cookieLifeTime
+    * @return string
+    */
+   public static function getCookieExpireDate(int $p_cookieLifeTime =5400) : string {
+      // Greenwich Mean Time (GMT)
+      $unixTimestamp = time() + $p_cookieLifeTime;
+      return date(DateTime::COOKIE, $unixTimestamp);
    }
 
    /**
@@ -149,7 +172,7 @@ class CustomDateTime
    /**
     * @param string $p_timezone Default boolean FALSE which defaults to the default timezone.
     */
-   public function setTimezone(string $p_timezone ='Europe/Copenhagen') : void {
+   public function setTimezone(string $p_timezone ='UTC') : void {
       // Set time-zone to use.
       if ($p_timezone) {
         // Use the given time-zone.
@@ -159,7 +182,6 @@ class CustomDateTime
         // Lets use the default timezone.
         $configuredTimeZone = ini_get('date.timezone');
         $this->setDefaultTimeZone($configuredTimeZone);
-        // $this->dateTimeZoneObj = new DateTimeZone(date_default_timezone_get());
       }
    }
 
@@ -174,7 +196,7 @@ class CustomDateTime
     * Sets the default timezone used by all date/time functions.
     * @param string $p_timezone
     */
-   public function setDefaultTimeZone(string $p_timezone ='Europe/Copenhagen') : void {
+   public function setDefaultTimeZone(string $p_timezone ='UTC') : void {
       date_default_timezone_set($p_timezone);
    }
 
@@ -187,6 +209,10 @@ class CustomDateTime
       } else {
         return $this->dateTimeObj->format($p_customFormat);
       }
+   }
+
+   public function getFormatedISODate(string $p_customFormat =self::FORMAT_ISO_DATE) : string {
+      return $this->dateTimeObj->format($p_customFormat);
    }
 
    /**
@@ -381,11 +407,10 @@ class CustomDateTime
     */
    public function getNumberOf_annualWeeks() : int {
       if ($this->isLongYear()) {
-        $numberOfWeeks = (int) 53;
+        return 53;
       } else {
-        $numberOfWeeks = (int) 52;
+        return 52;
       }
-      return $numberOfWeeks;
    }
 
    /**
@@ -441,7 +466,7 @@ class CustomDateTime
     * 
     * @return array
     */
-   public static function calcDateDiff($p_startDate, $p_endDate ='today') {
+   public static function calcDateDiff($p_startDate, $p_endDate ='today') : array {
       $startDateObj = new CustomDateTime($p_startDate);
       $endDateObj = new CustomDateTime($p_endDate);
 
@@ -451,5 +476,39 @@ class CustomDateTime
 
       $arrDiff = array('years' => $diffDateIntervalObj->format('%y'), 'months' => $diffDateIntervalObj->format('%m'), 'days' => $diffDateIntervalObj->format('%d'));
       return $arrDiff;
+   }
+
+   /**
+    * @param LanguagefileHandler $p_languagefileHandler
+    * @return array
+    */
+   public static function getLocalizedMonths(LanguagefileHandler $p_languagefileHandler) : array {
+      $arrMonths = [];
+      for ($idx =1; ($idx <=12); $idx++) {
+         $langEntryIdent = sprintf("CUSTOM_DATETIME_MONTH_%02d", $idx);
+         if ($p_languagefileHandler->doesLanguageEntryExists($langEntryIdent)) {
+           $localizedMonthName = $p_languagefileHandler->getEntryContent($langEntryIdent);
+         } else {
+           $localizedMonthName = sprintf('not-found ident: %s', $langEntryIdent);
+         }
+
+         $monthIdent = sprintf('%02d', $idx);
+         $arrMonths[$monthIdent] = $localizedMonthName;
+      }
+
+      return $arrMonths;
+   }
+
+   /**
+    * @param LanguagefileHandler $p_languagefileHandler
+    * @return string
+    */
+   public static function getLocalizedDateFormat(LanguagefileHandler $p_languagefileHandler) : string {
+      if ($p_languagefileHandler->doesLanguageEntryExists('CUSTOM_DATETIME_FORMAT_DATE')) {
+        return $p_languagefileHandler->getEntryContent('CUSTOM_DATETIME_FORMAT_DATE');
+      } else {
+        // Default something.
+        return 'Y-m-d';
+      }
    }
 } // End class

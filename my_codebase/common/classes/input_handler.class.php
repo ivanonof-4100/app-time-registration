@@ -2,20 +2,32 @@
 namespace Common\Classes;
 
 /**
- * Script-name  : input_handler.class.php 
- * Language     : PHP v7.4, v7.2
- * Date created : IMA, 06/10-2009
- * Last modified: IMA, 07/10-2022
- * Developers   : @author IMA, Ivan Mark Andersen <ivanonof@gmail.com>
+ * Filename  : input_handler.class.php 
+ * Language     : PHP v7.4+
+ * Date created : Ivan, 06/10-2009
+ * Last modified: Ivan, 01/04-2024
+ * Developers   : @author Ivan Mark Andersen <ivanonof@gmail.com>
  * 
- * @copyright: Copyright (C) 2009, 2011 by Ivan Mark Andersen
+ * @copyright: Copyright (C) 2024 by Ivan Mark Andersen
  *
- * Description
- *  The purpose of this class is to handle the retrive of input variables to starter-scripts in a safe, smart and easy way.
+ * DESCRIPTION:
+ * The purpose of this input-handler class is to handle the retrive of input-variables in a safe, smart and easy way.
  */
 class InputHandler
 {
-   const DEFAULT_DATATYPE = 'string';
+   const INPUT_SOURCE_GET ='_GET';
+   const INPUT_SOURCE_POST ='_POST';
+
+   const ACCEPTED_DATATYPE_STR ='string';
+   const ACCEPTED_DATATYPE_TEXT ='text';
+   const ACCEPTED_DATATYPE_BOOLEAN ='boolean';
+   const ACCEPTED_DATATYPE_INT ='integer';
+   const ACCEPTED_DATATYPE_POS_INT ='pos_int';
+   const ACCEPTED_DATATYPE_FLOAT ='float';
+   const ACCEPTED_DATATYPE_UUID ='uuid';
+   const ACCEPTED_DATATYPE_EMAIL ='email';
+   const ACCEPTED_DATATYPE_URL ='url';
+
    /**
     * @var string
     */
@@ -39,7 +51,7 @@ class InputHandler
       return new InputHandler();
    }
 
-   private function setAttr_dataType(string $p_dataTypeIdent =self::DEFAULT_DATATYPE) {
+   private function setAttr_dataType(string $p_dataTypeIdent =self::ACCEPTED_DATATYPE_STR) {
       // Set to what ever given type.
       $this->dataType = $p_dataTypeIdent;
    }
@@ -158,38 +170,37 @@ class InputHandler
    private function isDataTypeViolated($p_var) : bool {
       $dataType = $this->getAttr_dataType();
       switch ($dataType) {
-         case 'boolean' : {
+         case self::ACCEPTED_DATATYPE_BOOLEAN : {
             $isTypeViolated = !$this->isBoolean($p_var);
             break;
          }
 
-         case 'str' :
-         case 'string' :
-         case 'text' : {
+         case self::ACCEPTED_DATATYPE_STR :
+         case self::ACCEPTED_DATATYPE_TEXT : {
             $isTypeViolated = !$this->isString($p_var);
             break;
          }
-         case 'integer' : {
+         case self::ACCEPTED_DATATYPE_INT : {
             $isTypeViolated = !$this->isInteger($p_var);
             break;
          }
-         case 'pos_int' : {
+         case self::ACCEPTED_DATATYPE_POS_INT : {
             $isTypeViolated = !$this->isPosInteger($p_var);
             break;
          }
-         case 'float' : {
+         case self::ACCEPTED_DATATYPE_FLOAT : {
             $isTypeViolated = !$this->isFloat($p_var);
             break;         
          }
-         case 'email' : {
+         case self::ACCEPTED_DATATYPE_EMAIL : {
             $isTypeViolated = !$this->isEmail(trim($p_var));
             break;
          }
-         case 'uuid' : {
+         case self::ACCEPTED_DATATYPE_UUID : {
             $isTypeViolated = !self::isValidUUID(trim($p_var));
             break;
          }
-         case 'url' : {
+         case self::ACCEPTED_DATATYPE_URL : {
             $isTypeViolated = !self::isInternetURL(trim($p_var));
             break;
          }
@@ -224,34 +235,33 @@ class InputHandler
         $dataType = $this->getAttr_dataType();
 
         switch ($dataType) {
-         case 'boolean' : {
+         case self::ACCEPTED_DATATYPE_BOOLEAN : {
             $pbr_dataValue = (boolean) ($p_var == 'true')?true:false;
             break;
          }
-         case 'str' :
-         case 'string' :
-         case 'text' : {
+         case self::ACCEPTED_DATATYPE_STR :
+         case self::ACCEPTED_DATATYPE_TEXT : {
             $pbr_dataValue = (string) $p_var;
             break;
          }
-         case 'integer' :
-         case 'pos_int' : {
+         case self::ACCEPTED_DATATYPE_INT :
+         case self::ACCEPTED_DATATYPE_POS_INT : {
             $pbr_dataValue = (int) $p_var;
             break;
          }
-         case 'float' : {
+         case self::ACCEPTED_DATATYPE_FLOAT : {
             $pbr_dataValue = (float) $p_var;
             break;         
          }
-         case 'email' : {
+         case self::ACCEPTED_DATATYPE_EMAIL : {
             $pbr_dataValue = strtolower(trim($p_var));
             break;
          }
-         case 'uuid' : {
+         case self::ACCEPTED_DATATYPE_UUID : {
             $pbr_dataValue = (string) $p_var;
             break;
          }
-         case 'url' : {
+         case self::ACCEPTED_DATATYPE_URL : {
             $pbr_dataValue = (string) $p_var;
             break;
          }
@@ -271,6 +281,23 @@ class InputHandler
       }
 
       return $isValid; 
+   }
+
+   /**
+    * Retrives the requested parameter in specifyed input-source.
+    *
+    * @param string $p_parameterName
+    * @param string $p_expectedDataType
+    * @param string $p_parameterSource
+    *
+    * @return array
+    */
+   public function retriveInputParameter(string $p_parameterName, string $p_expectedDataType, string $p_parameterSource =InputHandler::INPUT_SOURCE_GET) {
+    if ($p_parameterSource == InputHandler::INPUT_SOURCE_GET) {
+      return $this->retriveVarFrom_GET($p_parameterName, $p_expectedDataType);
+    } elseif ($p_parameterSource == InputHandler::INPUT_SOURCE_POST) {
+      return $this->retriveVarFrom_POST($p_parameterName, $p_expectedDataType);
+    }
    }
 
    /**

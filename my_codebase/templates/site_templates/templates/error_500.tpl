@@ -28,7 +28,7 @@
             <div class="bs-callout bs-callout-error overlay-color-white">
               <div lang="en" class="error-mesg">
               <h3 class="text-center"><i class="fa fa-info-circle" aria-hidden="true"></i></h3>
-<p class="text-left"><span style="color:{$errorColor};">{nocache}{$errorMessage}{/nocache}</span></p>
+<p class="text-start"><span style="color:{$errorColor};">{nocache}{$errorMessage}{/nocache}</span></p>
               </div>
             </div>
           </div><!-- col -->

@@ -1,3 +1,14 @@
 /log/*
 /config/*
 /vendor/*
+/routes/api-routes.json
+/routes/web-routes.json
+/view/standard/configs/*
+/view/standard/cache/*
+/view/standard/templates_c/*
+/view/module/configs/*
+/view/module/cache/*
+/view/module/templates_c/*
+/view/site/configs/*
+/view/site/cache/*
+/view/site/templates_c/*
